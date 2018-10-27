@@ -12,23 +12,26 @@ def register_device():
         return False
 
     # reset device
+    current_x = 0x4000  # wheel
+    current_y = 0x4000  # accelerate
+    current_z = 0x4000  # brake
 
+    j.set_axis(pyvjoy.HID_USAGE_X, current_x)
+    j.set_axis(pyvjoy., current_x)
+    j.set_axis(pyvjoy.HID_USAGE_X, current_x)
+
+    # Notice the args are (buttonID,state) whereas vJoy's native API is the other way around.
+    for i in range(10): # turn all buttons off
+        j.set_button(i,0)
 
     return j
 
 
-#Pythonic API, item-at-a-time
-current_pos = 0x4000
 
 
-#turn button number 15 on
-j.set_button(15,1)
-
-#Notice the args are (buttonID,state) whereas vJoy's native API is the other way around.
 
 
-#Set X axis
-j.set_axis(pyvjoy.HID_USAGE_X, current_pos)
+
 
 import keyboard #Using module keyboard
 while True:#making a loop
