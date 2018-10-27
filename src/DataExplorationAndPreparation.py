@@ -2,30 +2,30 @@
 # coding: utf-8
 
 # # Step 0 - Data Exploration and Preparation
-# 
+#
 # ## Overview
-# 
-# Our goal is to train a deep learning model that can make steering angle predictions based on an input that comprises of camera images and the vehicle's last known state. In this notebook, we will prepare the data for our end-to-end deep learning model. Along the way, we will also make some useful observations about the dataset that will aid us when it comes time to train the model. 
-# 
-# 
+#
+# Our goal is to train a deep learning model that can make steering angle predictions based on an input that comprises of camera images and the vehicle's last known state. In this notebook, we will prepare the data for our end-to-end deep learning model. Along the way, we will also make some useful observations about the dataset that will aid us when it comes time to train the model.
+#
+#
 # ## What is end-to-end deep learning?
-# 
+#
 # End-to-end deep learning is a modeling strategy that is a response to the success of deep neural networks. Unlike traditional methods, this strategy is not built on feature engineering. Instead, it leverages the power of deep neural networks, along with recent hardware advances (GPUs, FPGAs etc.) to harness the incredible potential of large amounts of data. It is closer to a human-like learning approach than traditional ML as it lets a neural network map raw input to direct output. A big downside to this approach is that it requires a very large amount of training data which makes it unsuitable for many common applications. Since simulators can (potentially) generate data in infinite amounts, they are a perfect data source for end-to-end deep learning algorithms. If you wish to learn more, [this video](https://www.coursera.org/learn/machine-learning-projects/lecture/k0Klk/what-is-end-to-end-deep-learning) by Andrew Ng provides a nice overview of the topic.
-# 
-# Autonomous driving is a field that can highly benefit from the power of end-to-end deep learning. In order to achieve SAE Level 4 or 5 Autonomy, cars need to be trained on copious amounts of data (it is not uncommon for car manufacturers to collect hundreds of petabytes of data every week), something that is virtually impossible without a simulator. 
-# 
+#
+# Autonomous driving is a field that can highly benefit from the power of end-to-end deep learning. In order to achieve SAE Level 4 or 5 Autonomy, cars need to be trained on copious amounts of data (it is not uncommon for car manufacturers to collect hundreds of petabytes of data every week), something that is virtually impossible without a simulator.
+#
 # With photo-realistic simulators like [AirSim](https://github.com/Microsoft/AirSim), it is now possible to collect a large amount of data to train your autonomous driving models without having to use an actual car. These models can then be fine tuned using a comparably lesser amount of real-world data and used on actual cars. This technique is called Behavioral Cloning. In this tutorial, you will train a model to learn how to steer a car through a portion of the Landscape map in AirSim using only one of the front facing webcams on the car as visual input. Our strategy will be to perform some basic data analysis to get a feel for the dataset, and then train an end-to-end deep learning model to predict the correct driving control signal (in this case the steering angle) given a frame from the webcam, and the car's current state parameters (speed, steering angle, throttle etc.).
-# 
+#
 # Before you begin, please make sure you have the dataset for the tutorial downloaded. If you missed the instructions in the readme file, [you can download the dataset from here](https://aka.ms/AirSimTutorialDataset).
-# 
+#
 # Let us start by importing some standard libraries.
-# 
+#
 # **NOTE: If you see text within << ...... >> in some of the comments in these notebooks, it means you are expected to make a change in the accompanying code.**
 
 # In[1]:
 
 
-get_ipython().run_line_magic('matplotlib', 'inline')
+# get_ipython().run_line_magic('matplotlib', 'inline')
 import numpy as np
 import pandas as pd
 import h5py
@@ -36,10 +36,10 @@ import Cooking
 import random
 
 # << Point this to the directory containing the raw data >>
-RAW_DATA_DIR = 'data_raw/'
+RAW_DATA_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\data_raw'
 
 # << Point this to the desired output directory for the cooked (.h5) data >>
-COOKED_DATA_DIR = 'data_cooked/'
+COOKED_DATA_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\data_cooked'
 
 # The folders to search for data under RAW_DATA_DIR
 # For example, the first folder searched will be RAW_DATA_DIR/normal_1
@@ -47,16 +47,6 @@ DATA_FOLDERS = ['normal_1', 'normal_2', 'normal_3', 'normal_4', 'normal_5', 'nor
 
 # The size of the figures in this notebook
 FIGURE_SIZE = (10,10)
-
-
-# Let's take a look at the raw data. There are two parts to the dataset - the images and the .tsv file. First, let us read one of the .tsv files.
-
-# In[2]:
-
-
-sample_tsv_path = os.path.join(RAW_DATA_DIR, 'normal_1/airsim_rec.txt')
-sample_tsv = pd.read_csv(sample_tsv_path, sep='\t')
-sample_tsv.head()
 
 
 # This dataset contains our label, the steering angle. It also has the name of the image taken at the time the steering angle was recorded. Let's look at a sample image - 'img_0.png' inside the 'normal_1' folder (more on our folder naming style later).

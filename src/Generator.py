@@ -26,25 +26,26 @@ class DriveDataGenerator(image.ImageDataGenerator):
                  preprocessing_function=None,
                  data_format=None,
                  brighten_range=0):
-        super(DriveDataGenerator, self).__init__(featurewise_center,
-                 samplewise_center,
-                 featurewise_std_normalization,
-                 samplewise_std_normalization,
-                 zca_whitening,
-                 zca_epsilon,
-                 rotation_range,
-                 width_shift_range,
-                 height_shift_range,
-                 shear_range,
-                 zoom_range,
-                 channel_shift_range,
-                 fill_mode,
-                 cval,
-                 horizontal_flip,
-                 vertical_flip,
-                 rescale,
-                 preprocessing_function,
-                 data_format)
+        super(DriveDataGenerator, self).__init__(
+                 featurewise_center=featurewise_center,
+                 samplewise_center=samplewise_center,
+                 featurewise_std_normalization=featurewise_std_normalization,
+                 samplewise_std_normalization=samplewise_std_normalization,
+                 zca_whitening=zca_whitening,
+                zca_epsilon=zca_epsilon,
+                rotation_range=rotation_range,
+            width_shift_range=width_shift_range,
+            height_shift_range=height_shift_range,
+            shear_range=shear_range,
+            zoom_range=zoom_range,
+            channel_shift_range=channel_shift_range,
+            fill_mode=fill_mode,
+            cval=cval,
+            horizontal_flip=horizontal_flip,
+            vertical_flip=vertical_flip,
+            rescale=rescale,
+            preprocessing_function=preprocessing_function,
+            data_format=data_format)
         self.brighten_range = brighten_range
 
     def flow(self, x_images, x_prev_states = None, y=None, batch_size=32, shuffle=True, seed=None,
@@ -156,6 +157,7 @@ class DriveDataGenerator(image.ImageDataGenerator):
             x = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
 
         return (x, is_image_horizontally_flipped)
+
 
 class DriveIterator(image.Iterator):
     """Iterator yielding data from a Numpy array.
