@@ -6,7 +6,7 @@ current_y = 0x4000 # accelerate
 current_z = 0x4000 # brake
 
 
-def register_device():
+def register_device(reset_x=0x4000, reset_y=0x4000, reset_z=0x4000):
     '''
     acquire device
     '''
@@ -15,9 +15,9 @@ def register_device():
         return False
 
     # reset device
-    current_x = 0x4000  # wheel
-    current_y = 0x4000  # accelerate
-    current_z = 0x4000  # brake
+    current_x = reset_x
+    current_y = reset_y
+    current_z = reset_z
 
     print("Reset axis X")
     j.set_axis(pyvjoy.HID_USAGE_X, current_x)
@@ -26,10 +26,8 @@ def register_device():
     print("Reset axis Z")
     j.set_axis(pyvjoy.HID_USAGE_Z, current_z)
 
-    # Notice the args are (buttonID,state) whereas vJoy's native API is the other way around.
-    for i in range(1, 9):  # turn all buttons off
-        print("Reset button", i)
-        j.set_button(i, 0)
+    print("Reset buttons")
+    j.reset_buttons()
 
     return j
 
