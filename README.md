@@ -1,4 +1,4 @@
-# End To End Autonomous Car
+# CarNet
 Winter 18-19 Technion Project
 
 # Installing vJoy Controller
