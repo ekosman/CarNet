@@ -59,6 +59,7 @@ while True:
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imshow("test", img)
     cv2.waitKey(5)
+    image_buf[0] = image_buf[0]
     state_buf[0] = np.array([car_controls.steering, car_controls.throttle, car_controls.brake, car_state.speed])
     model_output = model.predict([image_buf, state_buf])
     car_controls.steering = round(0.5 * float(model_output[0][0]), 2)
