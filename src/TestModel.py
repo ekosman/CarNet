@@ -55,6 +55,7 @@ while True:
         car_controls.throttle = 0.0
     
     image_buf[0] = get_image()
+    print(image_buf[0].shape)
     img = np.array(image_buf[0], dtype=np.uint8)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imshow("test", img)
