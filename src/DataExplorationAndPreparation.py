@@ -36,10 +36,10 @@ import Cooking
 import random
 
 # << Point this to the directory containing the raw data >>
-RAW_DATA_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\data_raw'
+RAW_DATA_DIR = r'C:\Users\netanelgip\Documents\Carnet\Project\EndToEndLearningRawData\data_raw'
 
 # << Point this to the desired output directory for the cooked (.h5) data >>
-COOKED_DATA_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\data_cooked'
+COOKED_DATA_DIR = r'C:\Users\netanelgip\Documents\Carnet\Project\EndToEndLearningRawData\data_cooked'
 
 # The folders to search for data under RAW_DATA_DIR
 # For example, the first folder searched will be RAW_DATA_DIR/normal_1

@@ -17,12 +17,13 @@ import h5py
 from PIL import Image, ImageDraw
 import math
 import matplotlib.pyplot as plt
+import models
 
 # << The directory containing the cooked data from the previous step >>
-COOKED_DATA_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\data_cooked'
+COOKED_DATA_DIR = r'C:\Users\netanelgip\Documents\Carnet\Project\EndToEndLearningRawData\data_cooked'
 
 # << The directory in which the model output will be placed >>
-MODEL_OUTPUT_DIR = 'D:\Eitan_Netanel\EndToEndLearningRawData\model'
+MODEL_OUTPUT_DIR = r'C:\Users\netanelgip\Documents\Carnet\Project\EndToEndLearningRawData\model'
 
 train_dataset = h5py.File(os.path.join(COOKED_DATA_DIR, 'train.h5'), 'r')
 eval_dataset = h5py.File(os.path.join(COOKED_DATA_DIR, 'eval.h5'), 'r')
@@ -42,36 +43,10 @@ eval_generator = data_generator.flow(eval_dataset['image'], eval_dataset['previo
 
 image_input_shape = sample_batch_train_data[0].shape[1:]
 state_input_shape = sample_batch_train_data[1].shape[1:]
-activation = 'relu'
 
-#Create the convolutional stacks
-pic_input = Input(shape=image_input_shape)
+model = models.initial_model(image_input_shape, state_input_shape)
 
-img_stack = Conv2D(16, (3, 3), name="convolution0", padding='same', activation=activation)(pic_input)
-img_stack = MaxPooling2D(pool_size=(2,2))(img_stack)
-img_stack = Conv2D(32, (3, 3), activation=activation, padding='same', name='convolution1')(img_stack)
-img_stack = MaxPooling2D(pool_size=(2, 2))(img_stack)
-img_stack = Conv2D(32, (3, 3), activation=activation, padding='same', name='convolution2')(img_stack)
-img_stack = MaxPooling2D(pool_size=(2, 2))(img_stack)
-img_stack = Flatten()(img_stack)
-img_stack = Dropout(0.2)(img_stack)
-
-#Inject the state input
-state_input = Input(shape=state_input_shape)
-merged = concatenate([img_stack, state_input])
-
-# Add a few dense layers to finish the model
-merged = Dense(64, activation=activation, name='dense0')(merged)
-merged = Dropout(0.2)(merged)
-merged = Dense(10, activation=activation, name='dense2')(merged)
-merged = Dropout(0.2)(merged)
-merged = Dense(1, name='output')(merged)
-
-adam = Nadam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-model = Model(inputs=[pic_input, state_input], outputs=merged)
-model.compile(optimizer=adam, loss='mse')
-
-model.summary()
+# model.summary()
 
 
 plateau_callback = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=0.0001, verbose=1)
@@ -82,7 +57,7 @@ csv_callback = CSVLogger(os.path.join(MODEL_OUTPUT_DIR, 'training_log.csv'))
 early_stopping_callback = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
 callbacks=[plateau_callback, csv_callback, checkpoint_callback, early_stopping_callback]
 history = model.fit_generator(train_generator, steps_per_epoch=num_train_examples//batch_size, epochs=500, callbacks=callbacks,\
-                   validation_data=eval_generator, validation_steps=num_eval_examples//batch_size, verbose=2)
+                   validation_data=eval_generator, validation_steps=num_eval_examples//batch_size, verbose=1)
 
 
 def draw_image_with_label(img, label, prediction=None):
