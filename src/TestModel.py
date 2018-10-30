@@ -4,17 +4,22 @@ import numpy as np
 import glob
 import os
 import cv2
+import json
+from os import path
+from AirSimClient import *
+import os
+
+with open('trainConfig.json') as fp:
+    args = json.load(fp)
 
 if ('../../PythonClient/' not in sys.path):
     sys.path.insert(0, '../../PythonClient/')
-from AirSimClient import *
 
-# << Set this to the path of the model >>
 # If None, then the model with the lowest validation loss from training will be used
 MODEL_PATH = None
 
 if (MODEL_PATH == None):
-    models = glob.glob(r'C:\Users\netanelgip\Documents\Carnet\Project\EndToEndLearningRawData\model\models/*.h5')
+    models = glob.glob(path.join(args['modelSaveDir'], r'models/*.h5'))
     best_model = max(models, key=os.path.getctime)
     MODEL_PATH = best_model
     
@@ -50,12 +55,12 @@ while True:
     car_state = client.getCarState()
     
     if (car_state.speed < 5):
-        car_controls.throttle = 1.0
+        car_controls.throttle = 0.5
+
     else:
         car_controls.throttle = 0.0
-    
+
     image_buf[0] = get_image()
-    print(image_buf[0].shape)
     img = np.array(image_buf[0], dtype=np.uint8)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imshow("test", img)
