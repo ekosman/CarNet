@@ -11,7 +11,7 @@ __pycache__/
 *.so
 
 # generated model files
-model-*.h5
+# model-*.h5
 
 # train data
 data/
