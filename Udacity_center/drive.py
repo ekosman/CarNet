@@ -31,6 +31,8 @@ weights = np.log(np.arange(2, 2 + l))
 smooth = True
 @sio.on('telemetry')
 def telemetry(sid, data):
+
+
     if data:
         # The current steering angle of the car
         steering_angle = float(data["steering_angle"])
@@ -121,7 +123,7 @@ if __name__ == '__main__':
                         const=True, default=True,
                         help="Activate nice mode.")
     args = parser.parse_args()
-    smooth = args.smooth
+
     model = load_model(args.model)
 
     if args.image_folder != '':

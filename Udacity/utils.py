@@ -45,17 +45,21 @@ def preprocess(image):
     return image
 
 
-def choose_image(data_dir, center, left, right, steering_angle):
+def choose_image(data_dir, center, left, right, steering_angle, center_only):
     """
     Randomly choose an image from the center, left or right, and adjust
     the steering angle.
     """
-    choice = np.random.choice(3)
-    if choice == 0:
-        return load_image(data_dir, left), steering_angle + 0.2
-    elif choice == 1:
-        return load_image(data_dir, right), steering_angle - 0.2
-    return load_image(data_dir, center), steering_angle
+    if center_only:
+        return load_image(data_dir, center), steering_angle
+
+    else:
+        choice = np.random.choice(3)
+        if choice == 0:
+            return load_image(data_dir, left), steering_angle + 0.2
+        elif choice == 1:
+            return load_image(data_dir, right), steering_angle - 0.2
+        return load_image(data_dir, center), steering_angle
 
 
 def random_flip(image, steering_angle):
@@ -120,12 +124,12 @@ def random_brightness(image):
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
-def augument(data_dir, center, left, right, steering_angle, range_x=100, range_y=10):
+def augument(data_dir, center, left, right, steering_angle, range_x=100, range_y=10, center_only = False):
     """
     Generate an augumented image and adjust steering angle.
     (The steering angle is associated with the center image)
     """
-    image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
+    image, steering_angle = choose_image(data_dir, center, left, right, steering_angle, center_only)
     image, steering_angle = random_flip(image, steering_angle)
     image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
     image = random_shadow(image)
@@ -133,7 +137,7 @@ def augument(data_dir, center, left, right, steering_angle, range_x=100, range_y
     return image, steering_angle
 
 
-def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
+def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training, center_only):
     """
     Generate training image give image paths and associated steering angles
     """
@@ -146,7 +150,7 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             steering_angle = steering_angles[index]
             # argumentation
             if is_training and np.random.rand() < 0.6:
-                image, steering_angle = augument(data_dir, center, left, right, steering_angle)
+                image, steering_angle = augument(data_dir, center, left, right, steering_angle, center_only)
             else:
                 image = load_image(data_dir, center) 
             # add the image and steering angle to the batch
