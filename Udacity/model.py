@@ -3,12 +3,12 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
 from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten
 from utils import INPUT_SHAPE, batch_generator
 import argparse
 import os
-
+from os import path
 np.random.seed(0)
 
 
@@ -54,21 +54,33 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     """
     Train the model
     """
-    checkpoint = ModelCheckpoint('model-{epoch:03d}.h5',
+    if not path.exists('centered_models') and args.center_only:
+        os.mkdir('centered_models')
+
+    elif not path.exists('augment_models') and not args.center_only:
+        os.mkdir('augment_models')
+    save_dir = 'centered_models' if args.center_only else 'augment_models'
+    checkpoint = ModelCheckpoint(path.join(save_dir, 'model-{epoch:03d}.h5'),
                                  monitor='val_loss',
                                  verbose=0,
                                  save_best_only=args.save_best_only,
                                  mode='auto')
+    early = EarlyStopping(monitor='val_loss', patience=10)
+
+    if not path.exists('./logs'):
+        os.mkdir('./logs')
+
+    tensorboard = TensorBoard(log_dir='./logs')
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
-    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True),
+    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True, args.center_only),
                         args.samples_per_epoch,
                         args.nb_epoch,
                         max_q_size=1,
-                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
+                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False, args.center_only),
                         nb_val_samples=len(X_valid),
-                        callbacks=[checkpoint],
+                        callbacks=[checkpoint, early],
                         verbose=1)
 
 
@@ -93,6 +105,7 @@ def main():
     parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=40)
     parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='true')
     parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
+    parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
     args = parser.parse_args()
 
     print('-' * 30)

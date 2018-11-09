@@ -24,10 +24,6 @@ prev_image_array = None
 MAX_SPEED = 30
 MIN_SPEED = 10
 
-speed_limit = MAX_SPEED
-l = 25
-queue = [0] * (l - 1)
-weights = np.log(np.arange(2, 2 + l))
 
 @sio.on('telemetry')
 def telemetry(sid, data):
@@ -55,10 +51,7 @@ def telemetry(sid, data):
 
             # predict the steering angle for the image
             steering_angle = float(model.predict(image, batch_size=1))
-            queue.append(steering_angle)
-            steering_angle = weights.dot(queue) / sum(weights)
-            # queue[2] = steering_angle
-            del queue[0]
+
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
             # make sure we slow down first and then go back to the original max speed.
