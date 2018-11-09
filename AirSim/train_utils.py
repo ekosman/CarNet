@@ -6,6 +6,7 @@ import keras.backend as K
 
 
 
+
 def draw_image_with_label(img, label, prediction=None):
     theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
     line_length = 50

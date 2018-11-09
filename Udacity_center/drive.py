@@ -28,11 +28,9 @@ speed_limit = MAX_SPEED
 l = 25
 queue = [0] * (l - 1)
 weights = np.log(np.arange(2, 2 + l))
-
+smooth = True
 @sio.on('telemetry')
 def telemetry(sid, data):
-
-
     if data:
         # The current steering angle of the car
         steering_angle = float(data["steering_angle"])
@@ -52,13 +50,14 @@ def telemetry(sid, data):
             image = np.asarray(image)       # from PIL image to numpy array
             image = utils.preprocess(image) # apply the preprocessing
             image = np.array([image])       # the model expects 4D array
-
+            print('Smoothing:', smooth)
             # predict the steering angle for the image
             steering_angle = float(model.predict(image, batch_size=1))
-            queue.append(steering_angle)
-            steering_angle = weights.dot(queue) / sum(weights)
-            # queue[2] = steering_angle
-            del queue[0]
+            if smooth:
+                queue.append(steering_angle)
+                steering_angle = weights.dot(queue) / sum(weights)
+                # queue[2] = steering_angle
+                del queue[0]
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
             # make sure we slow down first and then go back to the original max speed.
@@ -95,6 +94,15 @@ def send_control(steering_angle, throttle):
         skip_sid=True)
 
 
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Remote Driving')
     parser.add_argument(
@@ -109,8 +117,11 @@ if __name__ == '__main__':
         default='',
         help='Path to image folder. This is where the images from the run will be saved.'
     )
+    parser.add_argument("--smooth", type=str2bool, nargs='?',
+                        const=True, default=True,
+                        help="Activate nice mode.")
     args = parser.parse_args()
-
+    smooth = args.smooth
     model = load_model(args.model)
 
     if args.image_folder != '':
