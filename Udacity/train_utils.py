@@ -5,7 +5,7 @@ import math
 import keras.backend as K
 import cv2
 import numpy as np
-
+from os import path
 
 def draw_image_with_label(img, label, prediction=None):
     theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
@@ -114,13 +114,31 @@ def augument(image, steering_angle, range_x=100, range_y=10):
 
 
 if __name__ == '__main__':
-    p = r"S:\Netanel\Carnet\Record\IMG\left_2018_11_03_14_17_52_090.JPG"
-    im = cv2.imread(p, 1)
+    pc = r"S:\Netanel\Carnet\Record\IMG\center_2018_11_09_15_06_51_950.JPG"
+    pl = r"S:\Netanel\Carnet\Record\IMG\left_2018_11_09_15_06_51_950.JPG"
+    pr = r"S:\Netanel\Carnet\Record\IMG\right_2018_11_09_15_06_51_950.JPG"
+    save_dir = r'D:\pres_imgs'
+    im = cv2.imread(pc, 1)
+    iml = cv2.imread(pl, 1)
+    imr = cv2.imread(pr, 1)
     # im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    image_ag_1 = random_translate(im, 100, 10, -0.5, 0)
-    image_ag_2 = random_translate(im, 100, 10, 0.5, 0)
-    cv2.imshow("orig", im)
-    cv2.imshow("aug_1", image_ag_1)
-    cv2.imshow("aug_2", image_ag_2)
-    cv2.waitKey(0)
+
+    height, width = im.shape[:2]
+
+    param = 30
+    pts1 = np.float32([[param, param], [height-param, param], [0, width], [height, width]])
+    pts2 = np.float32([[0, 0], [height, 0], [0, width], [height, width]])
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    dst_right = cv2.warpPerspective(imr, M, (width, height))
+
+    image_ag_1 = random_translate(iml, 100, 10, -0.5, 0)
+    image_ag_2 = random_translate(imr, 100, 10, 0.5, 0)
+    cv2.imwrite(path.join(save_dir, 'left.JPG'), image_ag_1)
+    cv2.imwrite(path.join(save_dir, 'right.JPG'), image_ag_2)
+    cv2.imwrite(path.join(save_dir, 'right_eitan.JPG'), dst_right)
+    # cv2.imshow("orig", im)
+    # cv2.imshow("dsad", dst)
+    # cv2.imshow("aug_1", image_ag_1)
+    # cv2.imshow("aug_2", image_ag_2)
+    # cv2.waitKey(0)
     # draw_image_with_label(im,0.5,-0.5)
