@@ -3,8 +3,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard
-from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
+from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten, BatchNormalization
 from utils import INPUT_SHAPE, batch_generator
 import argparse
 import os
@@ -32,18 +32,18 @@ def build_model(args):
     """
     Modified NVIDIA model
     """
+    act = 'elu'
     model = Sequential()
     model.add(Lambda(lambda x: x/127.5-1.0, input_shape=INPUT_SHAPE))
-    model.add(Conv2D(24, 5, 5, activation='elu', subsample=(2, 2)))
-    model.add(Conv2D(36, 5, 5, activation='elu', subsample=(2, 2)))
-    model.add(Conv2D(48, 5, 5, activation='elu', subsample=(2, 2)))
-    model.add(Conv2D(64, 3, 3, activation='elu'))
-    model.add(Conv2D(64, 3, 3, activation='elu'))
-    model.add(Dropout(args.keep_prob))
+    model.add(Conv2D(24, (5, 5), activation=act, strides=(2, 2)))
+    model.add(Conv2D(36, (5, 5), activation=act, strides=(2, 2)))
+    model.add(Conv2D(48, (5, 5), activation=act, strides=(2, 2)))
+    model.add(Conv2D(64, (3, 3), activation=act))
+    model.add(Conv2D(64, (3, 3), activation=act))
     model.add(Flatten())
-    model.add(Dense(100, activation='elu'))
-    model.add(Dense(50, activation='elu'))
-    model.add(Dense(10, activation='elu'))
+    model.add(Dense(100, activation=act))
+    model.add(Dense(50, activation=act))
+    model.add(Dense(10, activation=act))
     model.add(Dense(1))
     model.summary()
 
@@ -66,6 +66,8 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
                                  save_best_only=args.save_best_only,
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                  patience=5)
 
     if not path.exists('./logs'):
         os.mkdir('./logs')
@@ -75,12 +77,12 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
     model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True, args.center_only),
-                        args.samples_per_epoch,
-                        args.nb_epoch,
+                        steps_per_epoch=args.samples_per_epoch // args.batch_size,
+                        epochs=args.nb_epoch,
                         max_q_size=1,
                         validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False, args.center_only),
-                        nb_val_samples=len(X_valid),
-                        callbacks=[checkpoint, early],
+                        validation_steps=len(X_valid) // args.batch_size,
+                        callbacks=[checkpoint, early, tensorboard, reduce_lr],
                         verbose=1)
 
 
@@ -99,10 +101,10 @@ def main():
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
     parser.add_argument('-d', help='data directory',        dest='data_dir',          type=str,   default='data')
     parser.add_argument('-t', help='test size fraction',    dest='test_size',         type=float, default=0.2)
-    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.5)
+    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.3)
     parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=10)
-    parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=20000)
-    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=40)
+    parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=25000)
+    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=80)
     parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='true')
     parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
     parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
