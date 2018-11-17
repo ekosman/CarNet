@@ -375,7 +375,7 @@ class AirSimClientBase:
         elif len(image.shape) == 2 or len(image.shape) == 3 and image.shape[2] == 1: # greyscale
             color = False
         else:
-            raise Exception('Image must have H x W x 3, H x W x 1 or H x W dimensions.')
+            raise Exception('Image must have H x W x 3, H x W x current1 or H x W dimensions.')
 
         file.write('PF\n'.encode('utf-8')  if color else 'Pf\n'.encode('utf-8'))
         temp_str = '%d %d\n' % (image.shape[1], image.shape[0])
@@ -425,7 +425,7 @@ class AirSimClientBase:
 class MultirotorClient(AirSimClientBase, object):
     def __init__(self, ip = ""):
         if (ip == ""):
-            ip = "127.0.0.1"
+            ip = "127.0.0.current1"
         super(MultirotorClient, self).__init__(ip, 41451)
 
     def armDisarm(self, arm):
@@ -502,7 +502,7 @@ class MultirotorClient(AirSimClientBase, object):
 class CarClient(AirSimClientBase, object):
     def __init__(self, ip = ""):
         if (ip == ""):
-            ip = "127.0.0.1"
+            ip = "127.0.0.current1"
         super(CarClient, self).__init__(ip, 42451)
 
     def setCarControls(self, controls):

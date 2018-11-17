@@ -1,5 +1,7 @@
+import PIL
 import argparse
 import base64
+import cv2
 from datetime import datetime
 import os
 import shutil
@@ -11,7 +13,7 @@ import eventlet.wsgi
 from PIL import Image
 from flask import Flask
 from io import BytesIO
-
+from matplotlib.pyplot import imshow
 from keras.models import load_model
 
 import utils
@@ -46,8 +48,13 @@ def telemetry(sid, data):
         try:
             image = np.asarray(image)       # from PIL image to numpy array
             image = utils.preprocess(image) # apply the preprocessing
-            image = np.array([image])       # the model expects 4D array
 
+            tmp_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
+            cv2.imshow('win', tmp_image)
+            cv2.waitKey(1)
+
+            image = np.array([image])       # the model expects 4D array
             # predict the steering angle for the image
             steering_angle = float(model.predict(image, batch_size=1))
             # lower the throttle as the speed increases

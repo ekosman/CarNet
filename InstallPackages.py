@@ -6,7 +6,7 @@ import os
 os.system('python -m pip install --upgrade pip')
 #os.system('conda update -n base conda')
 os.system('conda install jupyter')
-os.system('pip install matplotlib==2.1.2')
+os.system('pip install matplotlib==2.current1.2')
 os.system('pip install image')
 os.system('pip install keras_tqdm')
 os.system('conda install -c conda-forge opencv')

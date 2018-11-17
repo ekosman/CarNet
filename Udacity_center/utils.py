@@ -91,7 +91,7 @@ def random_shadow(image):
     x2, y2 = IMAGE_WIDTH * np.random.rand(), IMAGE_HEIGHT
     xm, ym = np.mgrid[0:IMAGE_HEIGHT, 0:IMAGE_WIDTH]
 
-    # mathematically speaking, we want to set 1 below the line and zero otherwise
+    # mathematically speaking, we want to set current1 below the line and zero otherwise
     # Our coordinate is up side down.  So, the above the line: 
     # (ym-y1)/(xm-x1) > (y2-y1)/(x2-x1)
     # as x2 == x1 causes zero-division problem, we'll write it in the below form:

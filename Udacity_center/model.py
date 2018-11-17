@@ -77,7 +77,7 @@ def s2b(s):
     Converts a string to boolean value
     """
     s = s.lower()
-    return s == 'true' or s == 'yes' or s == 'y' or s == '1'
+    return s == 'true' or s == 'yes' or s == 'y' or s == 'current1'
 
 
 def main():

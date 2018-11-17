@@ -1,14 +1,17 @@
+import glob
+
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
+from keras.models import load_model
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
-from keras.layers import Lambda, Conv2D, MaxPooling2D, Dropout, Dense, Flatten, BatchNormalization
 from utils import INPUT_SHAPE, batch_generator
 import argparse
 import os
 from os import path
+from models import *
+
 np.random.seed(0)
 
 
@@ -17,8 +20,13 @@ def load_data(args):
     Load training data and split it into training and validation set
     """
     # data_df = pd.read_csv(os.path.join(args.data_dir, 'driving_log.csv'))
-    data_df = pd.read_csv(os.path.join(args.data_dir, 'driving_log.csv'),
-                          names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
+    data_df = None
+    dsa = args.data_dir
+    for filename in glob.iglob(path.join(args.data_dir, '**\\*.csv'), recursive=True):
+        if data_df is None:
+            data_df = pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
+        else:
+            data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']))
 
     X = data_df[['center', 'left', 'right']].values
     y = data_df['steering'].values
@@ -40,6 +48,7 @@ def build_model(args):
     model.add(Conv2D(48, (5, 5), activation=act, strides=(2, 2)))
     model.add(Conv2D(64, (3, 3), activation=act))
     model.add(Conv2D(64, (3, 3), activation=act))
+    model.add(Dropout(args.keep_prob))
     model.add(Flatten())
     model.add(Dense(100, activation=act))
     model.add(Dense(50, activation=act))
@@ -54,20 +63,25 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     """
     Train the model
     """
+    if not path.exists(args.save_dir):
+        os.mkdir(args.save_dir)
+
     if not path.exists('centered_models') and args.center_only:
         os.mkdir('centered_models')
 
     elif not path.exists('augment_models') and not args.center_only:
         os.mkdir('augment_models')
-    save_dir = 'centered_models' if args.center_only else 'augment_models'
+
+    # save_dir = 'centered_models' if args.center_only else 'augment_models'
+    save_dir = args.save_dir
     checkpoint = ModelCheckpoint(path.join(save_dir, 'model-{epoch:03d}.h5'),
                                  monitor='val_loss',
                                  verbose=0,
                                  save_best_only=args.save_best_only,
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                  patience=5)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                  patience=2)
 
     if not path.exists('./logs'):
         os.mkdir('./logs')
@@ -76,11 +90,11 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
-    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True, args.center_only),
+    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True),
                         steps_per_epoch=args.samples_per_epoch // args.batch_size,
                         epochs=args.nb_epoch,
                         max_q_size=1,
-                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False, args.center_only),
+                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
                         validation_steps=len(X_valid) // args.batch_size,
                         callbacks=[checkpoint, early, tensorboard, reduce_lr],
                         verbose=1)
@@ -101,13 +115,15 @@ def main():
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
     parser.add_argument('-d', help='data directory',        dest='data_dir',          type=str,   default='data')
     parser.add_argument('-t', help='test size fraction',    dest='test_size',         type=float, default=0.2)
-    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.3)
-    parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=10)
-    parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=25000)
-    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=80)
+    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.4)
+    parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=50)
+    parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=50000)
+    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=500)
     parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='true')
     parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
     parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
+    parser.add_argument('-save_dir')
+    parser.add_argument('-om', help='old model path')
     args = parser.parse_args()
 
     print('-' * 30)
@@ -117,8 +133,12 @@ def main():
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
+    if args.om is not None:
+        model = load_model(args.om)
+
+    else:
+        model = build_nvidia_model(args)
     data = load_data(args)
-    model = build_model(args)
     train_model(model, args, *data)
 
 

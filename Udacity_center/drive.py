@@ -97,7 +97,7 @@ def send_control(steering_angle, throttle):
 
 
 def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ('yes', 'true', 't', 'y', 'current1'):
         return True
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False

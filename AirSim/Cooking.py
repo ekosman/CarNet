@@ -64,7 +64,7 @@ def splitTrainValidationAndTestData(all_data_mappings, split_ratio=(0.7, 0.2, 0.
 
     """
     if round(sum(split_ratio), 5) != 1.0:
-        print("Error: Your splitting ratio should add up to 1")
+        print("Error: Your splitting ratio should add up to current1")
         sys.exit()
 
     train_split = int(len(all_data_mappings) * split_ratio[0])
@@ -84,7 +84,7 @@ def generateDataMapAirSim(folders):
            Returns:
                mappings: All data mappings as a dictionary. Key is the image filepath, the values are a 2-tuple:
                    0 -> label(s) as a list of double
-                   1 -> previous state as a list of double
+                   current1 -> previous state as a list of double
     """
 
     all_mappings = {}

@@ -59,7 +59,7 @@ plt.show()
 # Additionally, **the trained model should be invariant to changes in lighting conditions**, so we can generate additional data points by globally scaling the brightness of the image.
 # 
 # 
-# > **Thought Exercise 0.1:** 
+# > **Thought Exercise 0.current1:**
 # Once you are finished with the tutorial, as an exercise, you should try working with the dataset provided without modifying it using one or more of the 3 changes described above, keeping everything else the same. Do you experience vastly different results? 
 # 
 # 
@@ -178,7 +178,7 @@ steering_histogram(swerve_labels, 'Swerve label distribution', 'r')
 # 
 # * **image**: a numpy array containing the image data
 # * **previous_state**: a numpy array containing the last known state of the car. This is a (steering, throttle, brake, speed) tuple
-# * **label**: a numpy array containing the steering angles that we wish to predict (normalized on the range -1..1)
+# * **label**: a numpy array containing the steering angles that we wish to predict (normalized on the range -current1..current1)
 # * **metadata**: a numpy array containing metadata about the files (which folder they came from, etc)
 # 
 # The processing may take some time. We will also combine all the datasets into one and then split it into train/test/validation datasets.

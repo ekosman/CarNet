@@ -1,94 +1,71 @@
-import cv2, os
-import numpy as np
+import cv2
 import matplotlib.image as mpimg
-
+import numpy as np
+import os
 
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
+augment_prob = 0.6
+
+brightness_low = 0.8
+brightness_high = 1.2
+
+translate_multiplier = 0.003  # 0.002 in original
+translate_range_x = 100
+translate_range_y = 10
+
+flip_prob = 0.5
+
+steering_addition = 0.2
 
 
 def load_image(data_dir, image_file):
-    """
-    Load RGB images from a file
-    """
     return mpimg.imread(os.path.join(data_dir, image_file.strip()))
 
 
-def crop(image):
-    """
-    Crop the image (removing the sky at the top and the car front at the bottom)
-    """
-    return image[60:-25, :, :] # remove the sky and the car front
-
-
-def resize(image):
-    """
-    Resize the image to the input shape used by the network model
-    """
-    return cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
-
-
-def rgb2yuv(image):
-    """
-    Convert the image from RGB to YUV (This is what the NVIDIA model does)
-    """
-    return cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
-
-
 def preprocess(image):
-    """
-    Combine all preprocess functions into one
-    """
-    image = crop(image)
-    image = resize(image)
-    image = rgb2yuv(image)
+    image = image[60:-25, :, :]  # crop
+    image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
+    # image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
     return image
 
 
-def choose_image(data_dir, center, left, right, steering_angle, center_only):
-    """
-    Randomly choose an image from the center, left or right, and adjust
-    the steering angle.
-    """
-    if center_only:
-        return load_image(data_dir, center), steering_angle
+def choose_image(data_dir, center, left, right, steering_angle):
+    choice = np.random.choice(3)
+    image = center
 
-    else:
-        choice = np.random.choice(3)
-        if choice == 0:
-            return load_image(data_dir, left), steering_angle + 0.2
-        elif choice == 1:
-            return load_image(data_dir, right), steering_angle - 0.2
-        return load_image(data_dir, center), steering_angle
+    if choice == 0:
+        image = left
+        steering_angle += steering_addition
+    elif choice == 1:
+        image = right
+        steering_angle -= steering_addition
+
+    return load_image(data_dir, image), steering_angle
 
 
 def random_flip(image, steering_angle):
-    """
-    Randomly flipt the image left <-> right, and adjust the steering angle.
-    """
-    if np.random.rand() < 0.5:
+    if np.random.rand() < flip_prob:
         image = cv2.flip(image, 1)
         steering_angle = -steering_angle
     return image, steering_angle
 
 
-def random_translate(image, steering_angle, range_x, range_y):
-    """
-    Randomly shift the image virtially and horizontally (translation).
-    """
-    trans_x = range_x * (np.random.rand() - 0.5)
-    trans_y = range_y * (np.random.rand() - 0.5)
-    steering_angle += trans_x * 0.002
+def translate(image, steering_angle, trans_x, trans_y):
+    steering_angle += trans_x * translate_multiplier
     trans_m = np.float32([[1, 0, trans_x], [0, 1, trans_y]])
     height, width = image.shape[:2]
     image = cv2.warpAffine(image, trans_m, (width, height))
     return image, steering_angle
 
 
+def random_translate(image, steering_angle):
+    trans_x = translate_range_x * np.random.uniform(-0.5, 0.5)
+    trans_y = translate_range_y * np.random.uniform(-0.5, 0.5)
+    return translate(image, steering_angle, trans_x, trans_y)
+
+
 def random_shadow(image):
-    """
-    Generates and adds random shadow
-    """
     # (x1, y1) and (x2, y2) forms a line
     # xm, ym gives all the locations of the image
     x1, y1 = IMAGE_WIDTH * np.random.rand(), 0
@@ -114,57 +91,61 @@ def random_shadow(image):
 
 
 def random_brightness(image):
-    """
-    Randomly adjust brightness of the image.
-    """
-    # HSV (Hue, Saturation, Value) is also called HSB ('B' for Brightness).
     hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    ratio = 1.0 + 0.4 * (np.random.rand() - 0.5)
-    hsv[:,:,2] =  hsv[:,:,2] * ratio
+    ratio = np.random.uniform(brightness_low, brightness_high)
+    hsv[:, :, 2] = hsv[:, :, 2] * ratio
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
-def augument(data_dir, center, left, right, steering_angle, range_x=100, range_y=10, center_only = False):
-    """
-    Generate an augumented image and adjust steering angle.
-    (The steering angle is associated with the center image)
-    """
-    image, steering_angle = choose_image(data_dir, center, left, right, steering_angle, center_only)
+def generate_shadow_coordinates(imshape, no_of_shadows=1):
+    vertices_list = []
+    for index in range(no_of_shadows):
+        vertex = []
+        for dimensions in range(np.random.randint(3, 15)):  ## Dimensionality of the shadow polygon
+            vertex.append((imshape[1] * np.random.uniform(), imshape[0] // 3 + imshape[0] * np.random.uniform()))
+        vertices = np.array([vertex], dtype=np.int32)  ## single shadow vertices
+        vertices_list.append(vertices)
+    return vertices_list  ## List of shadow vertices
+
+
+def add_shadow(image, no_of_shadows=1):
+    image_HLS = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)  ## Conversion to HLS
+    mask = np.zeros_like(image)
+    imshape = image.shape
+    vertices_list = generate_shadow_coordinates(imshape, no_of_shadows)  # 3 getting list of shadow vertices
+    for vertices in vertices_list:
+        cv2.fillPoly(mask, vertices,
+                     255)  ## adding all shadow polygons on empty mask, single 255 denotes only red channel
+
+    image_HLS[:, :, 1][mask[:, :, 0] == 255] = image_HLS[:, :, 1][mask[:, :,
+                                                                  0] == 255] * 0.5  ## if red channel is hot, image's "Lightness" channel's brightness is lowered
+    image_RGB = cv2.cvtColor(image_HLS, cv2.COLOR_HLS2RGB)  ## Conversion to RGB
+    return image_RGB
+
+
+def augument(data_dir, center, left, right, steering_angle):
+    image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     image, steering_angle = random_flip(image, steering_angle)
-    image, steering_angle = random_translate(image, steering_angle, range_x, range_y)
+    image, steering_angle = random_translate(image, steering_angle)
     image = random_shadow(image)
+    # image = add_shadow(image)
     image = random_brightness(image)
     return image, steering_angle
 
 
-def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training, center_only):
-    """
-    Generate training image give image paths and associated steering angles
-    """
+def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
     images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
     steers = np.empty(batch_size)
-    pr_threshold = 0.75
     while True:
         i = 0
         for index in np.random.permutation(image_paths.shape[0]):
-            keep_pr = 0
-            while keep_pr == 0:
-                center, left, right = image_paths[index]
-                steering_angle = steering_angles[index]
-                # loop while we aren't satisfied
-                # argumentation
-                if is_training and np.random.rand() < 0.6:
-                    image, steering_angle = augument(data_dir, center, left, right, steering_angle, center_only)
-                else:
-                    image = load_image(data_dir, center)
-
-                if abs(steering_angle) < .1:
-                    pr_val = np.random.uniform()
-                    if pr_val > pr_threshold:
-                        keep_pr = 1
-                else:
-                    keep_pr = 1
-
+            center, left, right = image_paths[index]
+            steering_angle = steering_angles[index]
+            # argumentation
+            if is_training and np.random.rand() < augment_prob:
+                image, steering_angle = augument(data_dir, center, left, right, steering_angle)
+            else:
+                image = load_image(data_dir, center) 
             # add the image and steering angle to the batch
             images[i] = preprocess(image)
             steers[i] = steering_angle
@@ -172,4 +153,3 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             if i == batch_size:
                 break
         yield images, steers
-

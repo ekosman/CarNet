@@ -68,7 +68,7 @@ class DriveDataGenerator(image.ImageDataGenerator):
             x: 3D tensor, single image.
             seed: random seed.
         # Returns
-            A tuple. 0 -> randomly transformed version of the input (same shape). 1 -> true if image was horizontally flipped, false otherwise
+            A tuple. 0 -> randomly transformed version of the input (same shape). current1 -> true if image was horizontally flipped, false otherwise
         """
         # x is a single image, so it doesn't have image number at index 0
         img_row_axis = self.row_axis
@@ -151,7 +151,7 @@ class DriveDataGenerator(image.ImageDataGenerator):
         if self.brighten_range != 0:
             random_bright = np.random.uniform(low = 1.0-self.brighten_range, high=1.0+self.brighten_range)
             
-            #TODO: Write this as an apply to push operations into C for performance
+            #TODO.md: Write this as an apply to push operations into C for performance
             img = cv2.cvtColor(x, cv2.COLOR_RGB2HSV)
             img[:, :, 2] = np.clip(img[:, :, 2] * random_bright, 0, 255)
             x = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
@@ -208,7 +208,7 @@ class DriveIterator(image.Iterator):
             raise ValueError('NumpyArrayIterator is set to use the '
                              'data format convention "' + data_format + '" '
                              '(channels on axis ' + str(channels_axis) + '), i.e. expected '
-                             'either 1, 3 or 4 channels on axis ' + str(channels_axis) + '. '
+                             'either current1, 3 or 4 channels on axis ' + str(channels_axis) + '. '
                              'However, it was passed an array with shape ' + str(self.x_images.shape) +
                              ' (' + str(self.x_images.shape[channels_axis]) + ' channels).')
         if x_prev_states is not None:
