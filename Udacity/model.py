@@ -137,7 +137,7 @@ def main():
         model = load_model(args.om)
 
     else:
-        model = build_nvidia_model(args)
+        model = build_nvidia_model_tanh(args)
     data = load_data(args)
     train_model(model, args, *data)
 
