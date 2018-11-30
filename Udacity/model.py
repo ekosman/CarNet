@@ -78,7 +78,7 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
                                  save_best_only=args.save_best_only,
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6,
                                   patience=5, verbose=1)
 
     if not path.exists('./logs'):
@@ -137,7 +137,7 @@ def main():
         model = load_model(args.om)
 
     else:
-        model = build_nvidia_model_tanh(args)
+        model = build_nvidia_model(args)
     data = load_data(args)
     train_model(model, args, *data)
 
