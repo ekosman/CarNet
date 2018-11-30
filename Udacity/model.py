@@ -78,8 +78,8 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
                                  save_best_only=args.save_best_only,
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                  patience=2)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
+                                  patience=5, verbose=1)
 
     if not path.exists('./logs'):
         os.mkdir('./logs')
@@ -93,9 +93,10 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
                         steps_per_epoch=len(X_train) // args.batch_size,
                         epochs=args.nb_epoch,
                         max_q_size=1,
+                        # validation_data=(X_valid, y_valid),
                         validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
                         validation_steps=len(X_valid) // args.batch_size,
-                        callbacks=[checkpoint, early, tensorboard, reduce_lr],
+                        callbacks=[checkpoint, early, reduce_lr],
                         verbose=1)
 
 
@@ -114,10 +115,10 @@ def main():
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
     parser.add_argument('-d', help='data directory',        dest='data_dir',          type=str,   default='data')
     parser.add_argument('-t', help='test size fraction',    dest='test_size',         type=float, default=0.2)
-    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.4)
+    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.5)
     parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=50)
     parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=50000)
-    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=500)
+    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=20)
     parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='true')
     parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
     parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
