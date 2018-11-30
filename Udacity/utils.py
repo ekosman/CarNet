@@ -10,7 +10,7 @@ augment_prob = 0.6
 brightness_low = 0.8
 brightness_high = 1.2
 
-translate_multiplier = 0.003  # 0.002 in original
+translate_multiplier = 0.002  # 0.002 in original
 translate_range_x = 100
 translate_range_y = 10
 

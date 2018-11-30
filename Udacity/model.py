@@ -22,41 +22,39 @@ def load_data(args):
     # data_df = pd.read_csv(os.path.join(args.data_dir, 'driving_log.csv'))
     data_df = None
     dsa = args.data_dir
+    X_train, X_valid, Y_train, Y_valid = None, None, None, None
     for filename in glob.iglob(path.join(args.data_dir, '**\\*.csv'), recursive=True):
-        if data_df is None:
-            data_df = pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
+        data_df = pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
+        X = data_df[['center', 'left', 'right']].values
+        y = data_df['steering'].values
+
+        if X_train is None:
+            X_train, X_valid, Y_train, Y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
         else:
-            data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']))
+            X_train_tmp, X_valid_tmp, Y_train_tmp, Y_valid_tmp = train_test_split(X, y, test_size=args.test_size, random_state=0)
+            X_train = np.concatenate((X_train, X_train_tmp), axis=0)
+            X_valid = np.concatenate((X_valid, X_valid_tmp), axis=0)
+            Y_train = np.concatenate((Y_train, Y_train_tmp), axis=0)
+            Y_valid = np.concatenate((Y_valid, Y_valid_tmp), axis=0)
 
-    X = data_df[['center', 'left', 'right']].values
-    y = data_df['steering'].values
-
-    X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
-
-    return X_train, X_valid, y_train, y_valid
+        print("X train size: {}".format(len(X_train)))
 
 
-def build_model(args):
-    """
-    Modified NVIDIA model
-    """
-    act = 'elu'
-    model = Sequential()
-    model.add(Lambda(lambda x: x/127.5-1.0, input_shape=INPUT_SHAPE))
-    model.add(Conv2D(24, (5, 5), activation=act, strides=(2, 2)))
-    model.add(Conv2D(36, (5, 5), activation=act, strides=(2, 2)))
-    model.add(Conv2D(48, (5, 5), activation=act, strides=(2, 2)))
-    model.add(Conv2D(64, (3, 3), activation=act))
-    model.add(Conv2D(64, (3, 3), activation=act))
-    model.add(Dropout(args.keep_prob))
-    model.add(Flatten())
-    model.add(Dense(100, activation=act))
-    model.add(Dense(50, activation=act))
-    model.add(Dense(10, activation=act))
-    model.add(Dense(1))
-    model.summary()
+        # data_df = data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']), low_memory=False)
+        # print(data_df.shape)
+    # filename = r"D:\Eitan_Netanel\Records\normal\driving_log.csv"
+    # data_df = pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
+    # filename = r"D:\Eitan_Netanel\Records\normal_reverse\driving_log.csv"
+    # data_df = data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']))
 
-    return model
+
+
+    # X = data_df[['center', 'left', 'right']].values
+    # y = data_df['steering'].values
+    #
+    # X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
+
+    return X_train, X_valid, Y_train, Y_valid
 
 
 def train_model(model, args, X_train, X_valid, y_train, y_valid):
@@ -91,7 +89,8 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
     model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True),
-                        steps_per_epoch=args.samples_per_epoch // args.batch_size,
+                        # steps_per_epoch=args.samples_per_epoch // args.batch_size,
+                        steps_per_epoch=len(X_train) // args.batch_size,
                         epochs=args.nb_epoch,
                         max_q_size=1,
                         validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
