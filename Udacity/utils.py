@@ -18,6 +18,9 @@ flip_prob = 0.5
 
 steering_addition = 0.2
 
+small_angle_keep_prob = 0.6
+steering_threshold = 0.025
+
 
 def load_image(data_dir, image_file):
     return mpimg.imread(os.path.join(data_dir, image_file.strip()))
@@ -136,20 +139,28 @@ def augument(data_dir, center, left, right, steering_angle):
 def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
     images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
     steers = np.empty(batch_size)
+    permutation = np.random.permutation(image_paths.shape[0])
+    perm_i = 0
     while True:
         i = 0
-        for index in np.random.permutation(image_paths.shape[0]):
-            center, left, right = image_paths[index]
-            steering_angle = steering_angles[index]
-            # argumentation
+        while i < batch_size:
+            center, left, right = image_paths[perm_i]
+            steering_angle = steering_angles[perm_i]
+
+            # augmentation
             if is_training and np.random.rand() < augment_prob:
                 image, steering_angle = augument(data_dir, center, left, right, steering_angle)
             else:
-                image = load_image(data_dir, center) 
+                image = load_image(data_dir, center)
+
+            if np.abs(steering_angle) < steering_threshold and np.random.rand() > small_angle_keep_prob:
+                continue
+
             # add the image and steering angle to the batch
             images[i] = preprocess(image)
             steers[i] = steering_angle
             i += 1
-            if i == batch_size:
-                break
+            perm_i +=1
+            perm_i %= len(permutation)
+
         yield images, steers

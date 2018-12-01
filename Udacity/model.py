@@ -61,8 +61,12 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     """
     Train the model
     """
-    if not path.exists(args.save_dir):
-        os.mkdir(args.save_dir)
+    if not path.exists('Models'):
+        os.mkdir('Models')
+
+    full_path = path.join('Models', args.save_dir)
+    if not path.exists(full_path):
+        os.mkdir(args.full_path)
 
     if not path.exists('centered_models') and args.center_only:
         os.mkdir('centered_models')
@@ -71,7 +75,7 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
         os.mkdir('augment_models')
 
     # save_dir = 'centered_models' if args.center_only else 'augment_models'
-    save_dir = args.save_dir
+    save_dir = full_path
     checkpoint = ModelCheckpoint(path.join(save_dir, 'model-{epoch:03d}.h5'),
                                  monitor='val_loss',
                                  verbose=0,
@@ -119,7 +123,7 @@ def main():
     parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=50)
     parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=50000)
     parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=20)
-    parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='true')
+    parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='false')
     parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
     parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
     parser.add_argument('-save_dir')

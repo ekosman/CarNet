@@ -1,5 +1,6 @@
 import argparse
 
+from keras.engine.saving import load_model
 from keras.preprocessing import image
 from PIL import ImageDraw, Image
 import matplotlib.pyplot as plt
