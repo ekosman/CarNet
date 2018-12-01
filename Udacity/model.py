@@ -30,15 +30,17 @@ def load_data(args):
 
         if X_train is None:
             X_train, X_valid, Y_train, Y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
+            print('Loaded {} data items from: {}'.format(len(X_train) + len(X_valid), filename))
         else:
             X_train_tmp, X_valid_tmp, Y_train_tmp, Y_valid_tmp = train_test_split(X, y, test_size=args.test_size, random_state=0)
             X_train = np.concatenate((X_train, X_train_tmp), axis=0)
             X_valid = np.concatenate((X_valid, X_valid_tmp), axis=0)
             Y_train = np.concatenate((Y_train, Y_train_tmp), axis=0)
             Y_valid = np.concatenate((Y_valid, Y_valid_tmp), axis=0)
+            print('Loaded {} data items from: {}'.format(len(X_train_tmp) + len(X_valid_tmp), filename))
 
-        print("X train size: {}".format(len(X_train)))
 
+    print('Data size: Total items - {}        Train - {}        Validation - {}'.format(len(X_train) + len(X_valid), len(X_train), len(X_valid)))
     return X_train, X_valid, Y_train, Y_valid
 
 

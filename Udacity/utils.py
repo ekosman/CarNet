@@ -128,11 +128,11 @@ def augment(data_dir, center, left, right, steering_angle):
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     if np.random.rand() < 0.5:
         image, steering_angle = random_flip(image, steering_angle)
-    if np.random.rand() < 0.5:
+    if np.random.rand() < augment_prob:
         image, steering_angle = random_translate(image, steering_angle)
-    if np.random.rand() < 0.5:
+    if np.random.rand() < augment_prob:
         image = random_shadow(image)
-    if np.random.rand() < 0.5:
+    if np.random.rand() < augment_prob:
         image = random_brightness(image)
     return image, steering_angle
 

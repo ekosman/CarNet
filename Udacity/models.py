@@ -21,7 +21,7 @@ def build_nvidia_model(args):
     model.add(Dense(50, activation=act))
     model.add(Dense(10, activation=act))
     model.add(Dense(1))
-    model.summary()
+    # model.summary()
 
     return model
 
@@ -44,6 +44,6 @@ def build_nvidia_model_tanh(args):
     model.add(Dense(50, activation=act2))
     model.add(Dense(10, activation=act2))
     model.add(Dense(1))
-    model.summary()
+    # model.summary()
 
     return model

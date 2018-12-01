@@ -1,12 +1,8 @@
 import argparse
-
-import cv2
-
 import numpy as np
-
+from matplotlib import pyplot as plt
 from Udacity.model import load_data
 from Udacity.utils import batch_generator
-from matplotlib import pyplot as plt
 
 
 def print_graph(args, X_train, X_valid, y_train, y_valid):
@@ -33,13 +29,8 @@ def print_graph(args, X_train, X_valid, y_train, y_valid):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
     parser.add_argument('-d', help='data directory', dest='data_dir', type=str, default='data')
-    parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.2)
-    parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.3)
-    parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=10)
-    parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=25000)
+    parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0)
     parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=20)
-    parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
-    parser.add_argument('-c', help='center only', dest='center_only', type=int, default=0)
     args = parser.parse_args()
 
     data = load_data(args)
