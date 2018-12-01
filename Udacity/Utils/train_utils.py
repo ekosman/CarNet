@@ -1,6 +1,4 @@
 import argparse
-
-from keras.engine.saving import load_model
 from keras.preprocessing import image
 from PIL import ImageDraw, Image
 import matplotlib.pyplot as plt
@@ -8,16 +6,15 @@ import math
 import keras.backend as K
 import cv2
 import numpy as np
-import matplotlib.image as mpimg
 
-from Udacity.model import load_data, s2b
-from Udacity.utils import batch_generator
+from model import load_data, s2b
+from utils import batch_generator
 
 
 def draw_image_with_label(img, label, prediction=None):
     theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
-    line_length = 50
-    line_thickness = 3
+    line_length = 25
+    line_thickness = 2
     label_line_color = (255, 0, 0)
     prediction_line_color = (0, 0, 255)
     pil_image = image.array_to_img(img, K.image_data_format(), scale=True)

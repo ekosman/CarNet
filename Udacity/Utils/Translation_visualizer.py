@@ -1,8 +1,6 @@
 from utils import *
-import cv2
 from os import path
-import numpy as np
-from train_utils import *
+from Utils.train_utils import *
 
 data_dir = r"C:\Users\netanelgip\Documents\CarNet\Records\normal\IMG"
 image_name = r"_2018_11_16_12_38_42_263.jpg"

@@ -5,7 +5,7 @@ import models
 from Cooking import checkAndCreateDir
 from Generator import DriveDataGenerator
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, CSVLogger, EarlyStopping
-from train_utils import draw_image_with_label
+from Utils.train_utils import draw_image_with_label
 
 with open('trainConfig.json') as fp:
     args = json.load(fp)

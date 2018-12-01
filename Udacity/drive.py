@@ -1,22 +1,19 @@
-import PIL
 import argparse
 import base64
-import cv2
-from datetime import datetime
 import os
 import shutil
-
+from datetime import datetime
+from io import BytesIO
+import cv2
+import eventlet.wsgi
 import numpy as np
 import socketio
-import eventlet
-import eventlet.wsgi
 from PIL import Image
 from flask import Flask
-from io import BytesIO
-from matplotlib.pyplot import imshow
 from keras.models import load_model
 
 import utils
+from Utils.train_utils import draw_image_with_label
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -50,13 +47,16 @@ def telemetry(sid, data):
             image = utils.preprocess(image) # apply the preprocessing
 
             tmp_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
-            cv2.imshow('win', tmp_image)
-            cv2.waitKey(1)
 
+            # cv2.imshow('win', tmp_image)
+            # cv2.waitKey(1)
             image = np.array([image])       # the model expects 4D array
             # predict the steering angle for the image
             steering_angle = float(model.predict(image, batch_size=1))
+            tmp_image = np.asarray(draw_image_with_label(tmp_image, steering_angle))
+            tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
+            cv2.imshow('win', tmp_image)
+            cv2.waitKey(1)
             # lower the throttle as the speed increases
             # if the speed is above the current speed limit, we are on a downhill.
             # make sure we slow down first and then go back to the original max speed.
