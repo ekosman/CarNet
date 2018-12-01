@@ -5,7 +5,7 @@ import os
 
 IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS = 66, 200, 3
 INPUT_SHAPE = (IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS)
-augment_prob = 0.6
+augment_prob = 0.7
 
 brightness_low = 0.8
 brightness_high = 1.2
@@ -48,10 +48,7 @@ def choose_image(data_dir, center, left, right, steering_angle):
 
 
 def random_flip(image, steering_angle):
-    if np.random.rand() < flip_prob:
-        image = cv2.flip(image, 1)
-        steering_angle = -steering_angle
-    return image, steering_angle
+    return cv2.flip(image, 1), -steering_angle
 
 
 def translate(image, steering_angle, trans_x, trans_y):
@@ -66,6 +63,7 @@ def random_translate(image, steering_angle):
     trans_x = translate_range_x * np.random.uniform(-0.5, 0.5)
     trans_y = translate_range_y * np.random.uniform(-0.5, 0.5)
     return translate(image, steering_angle, trans_x, trans_y)
+
 
 
 def random_shadow(image):
@@ -126,13 +124,16 @@ def add_shadow(image, no_of_shadows=1):
     return image_RGB
 
 
-def augument(data_dir, center, left, right, steering_angle):
+def augment(data_dir, center, left, right, steering_angle):
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
-    image, steering_angle = random_flip(image, steering_angle)
-    image, steering_angle = random_translate(image, steering_angle)
-    image = random_shadow(image)
-    # image = add_shadow(image)
-    image = random_brightness(image)
+    if np.random.rand() < 0.5:
+        image, steering_angle = random_flip(image, steering_angle)
+    if np.random.rand() < 0.5:
+        image, steering_angle = random_translate(image, steering_angle)
+    if np.random.rand() < 0.5:
+        image = random_shadow(image)
+    if np.random.rand() < 0.5:
+        image = random_brightness(image)
     return image, steering_angle
 
 
@@ -148,8 +149,8 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             steering_angle = steering_angles[perm_i]
 
             # augmentation
-            if is_training and np.random.rand() < augment_prob:
-                image, steering_angle = augument(data_dir, center, left, right, steering_angle)
+            if is_training:
+                image, steering_angle = augment(data_dir, center, left, right, steering_angle)
             else:
                 image = load_image(data_dir, center)
 

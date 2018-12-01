@@ -39,21 +39,6 @@ def load_data(args):
 
         print("X train size: {}".format(len(X_train)))
 
-
-        # data_df = data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']), low_memory=False)
-        # print(data_df.shape)
-    # filename = r"D:\Eitan_Netanel\Records\normal\driving_log.csv"
-    # data_df = pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed'])
-    # filename = r"D:\Eitan_Netanel\Records\normal_reverse\driving_log.csv"
-    # data_df = data_df.append(pd.read_csv(filename, names=['center', 'left', 'right', 'steering', 'throttle', 'reverse', 'speed']))
-
-
-
-    # X = data_df[['center', 'left', 'right']].values
-    # y = data_df['steering'].values
-    #
-    # X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=args.test_size, random_state=0)
-
     return X_train, X_valid, Y_train, Y_valid
 
 
@@ -66,7 +51,7 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
 
     full_path = path.join('Models', args.save_dir)
     if not path.exists(full_path):
-        os.mkdir(args.full_path)
+        os.mkdir(full_path)
 
     if not path.exists('centered_models') and args.center_only:
         os.mkdir('centered_models')
