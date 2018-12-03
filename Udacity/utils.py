@@ -51,7 +51,7 @@ def random_flip(image, steering_angle):
     return cv2.flip(image, 1), -steering_angle
 
 
-def translate(image, steering_angle, trans_x, trans_y):
+def translate(image, steering_angle, trans_x, trans_y, translate_multiplier=0.002):
     steering_angle += trans_x * translate_multiplier
     trans_m = np.float32([[1, 0, trans_x], [0, 1, trans_y]])
     height, width = image.shape[:2]
@@ -59,11 +59,10 @@ def translate(image, steering_angle, trans_x, trans_y):
     return image, steering_angle
 
 
-def random_translate(image, steering_angle):
+def random_translate(image, steering_angle, translate_multiplier):
     trans_x = translate_range_x * np.random.uniform(-0.5, 0.5)
     trans_y = translate_range_y * np.random.uniform(-0.5, 0.5)
-    return translate(image, steering_angle, trans_x, trans_y)
-
+    return translate(image, steering_angle, trans_x, trans_y, translate_multiplier)
 
 
 def random_shadow(image):
@@ -124,20 +123,21 @@ def add_shadow(image, no_of_shadows=1):
     return image_RGB
 
 
-def augment(data_dir, center, left, right, steering_angle):
+def augment(data_dir, center, left, right, steering_angle, augment_prob, translate_multiplier):
     image, steering_angle = choose_image(data_dir, center, left, right, steering_angle)
     if np.random.rand() < 0.5:
         image, steering_angle = random_flip(image, steering_angle)
     if np.random.rand() < augment_prob:
-        image, steering_angle = random_translate(image, steering_angle)
+        image, steering_angle = random_translate(image, steering_angle, translate_multiplier)
     if np.random.rand() < augment_prob:
-        image = random_shadow(image)
+        image = add_shadow(image, np.random.choice(3) + 1)
+        # image = random_shadow(image)
     if np.random.rand() < augment_prob:
         image = random_brightness(image)
     return image, steering_angle
 
 
-def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training):
+def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_training, augment_prob, small_angle_keep_prob, translate_multiplier):
     images = np.empty([batch_size, IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS])
     steers = np.empty(batch_size)
     permutation = np.random.permutation(image_paths.shape[0])
@@ -150,7 +150,7 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
 
             # augmentation
             if is_training:
-                image, steering_angle = augment(data_dir, center, left, right, steering_angle)
+                image, steering_angle = augment(data_dir, center, left, right, steering_angle, augment_prob, translate_multiplier)
             else:
                 image = load_image(data_dir, center)
 

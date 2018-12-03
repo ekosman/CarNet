@@ -1,5 +1,6 @@
 import glob
 
+import argparse as argparse
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -11,6 +12,7 @@ import argparse
 import os
 from os import path
 from models import *
+import itertools
 
 np.random.seed(0)
 
@@ -44,14 +46,14 @@ def load_data(args):
     return X_train, X_valid, Y_train, Y_valid
 
 
-def train_model(model, args, X_train, X_valid, y_train, y_valid):
+def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob, translate_multiplier, args, X_train, X_valid, y_train, y_valid):
     """
     Train the model
     """
     if not path.exists('Models'):
         os.mkdir('Models')
 
-    full_path = path.join('Models', args.save_dir)
+    full_path = path.join('Models', save_dir)
     if not path.exists(full_path):
         os.mkdir(full_path)
 
@@ -61,14 +63,13 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
     elif not path.exists('augment_models') and not args.center_only:
         os.mkdir('augment_models')
 
-    # save_dir = 'centered_models' if args.center_only else 'augment_models'
     save_dir = full_path
     checkpoint = ModelCheckpoint(path.join(save_dir, 'model-{epoch:03d}.h5'),
                                  monitor='val_loss',
                                  verbose=0,
                                  save_best_only=args.save_best_only,
                                  mode='auto')
-    early = EarlyStopping(monitor='val_loss', patience=10)
+    early = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6,
                                   patience=5, verbose=1)
 
@@ -79,14 +80,11 @@ def train_model(model, args, X_train, X_valid, y_train, y_valid):
 
     model.compile(loss='mean_squared_error', optimizer=Adam(lr=args.learning_rate))
 
-    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, args.batch_size, True),
-                        # steps_per_epoch=args.samples_per_epoch // args.batch_size,
-                        steps_per_epoch=len(X_train) // args.batch_size,
+    model.fit_generator(batch_generator(args.data_dir, X_train, y_train, batch_size, True, augment_prob, small_angle_keep_prob, translate_multiplier),
+                        steps_per_epoch=len(X_train) // batch_size,
                         epochs=args.nb_epoch,
-                        max_q_size=1,
-                        # validation_data=(X_valid, y_valid),
-                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, args.batch_size, False),
-                        validation_steps=len(X_valid) // args.batch_size,
+                        validation_data=batch_generator(args.data_dir, X_valid, y_valid, batch_size, False, augment_prob, small_angle_keep_prob, translate_multiplier),
+                        validation_steps=len(X_valid) // batch_size,
                         callbacks=[checkpoint, early, reduce_lr],
                         verbose=1)
 
@@ -99,20 +97,26 @@ def s2b(s):
     return s == 'true' or s == 'yes' or s == 'y' or s == '1'
 
 
-def main():
+def train(normalize, pooling_type, add_dense, activation_conv, activation_dense, augment_prob, batch_size, small_angle_keep_prob, translate_multiplier, data, args):
+    save_dir = 'normalize={}_pooling={}_addDence={}_activationConv={}_activationDence={}_augmentProb={}_batchSize={}_smallAngleKeepProb={}_translateMult={}'.format(normalize, pooling_type, add_dense, activation_conv, activation_dense, augment_prob, batch_size, small_angle_keep_prob, translate_multiplier)
+    model = build_parameterized_net(normalize=normalize, pooling_type=pooling_type, add_dense=add_dense, activation_conv=activation_conv, activation_dense=activation_dense)
+    train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob, translate_multiplier, args, *data)
+
+
+if __name__ == '__main__':
     """
-    Load train/validation data set and train the model
+        Load train/validation data set and train the model
     """
     parser = argparse.ArgumentParser(description='Behavioral Cloning Training Program')
-    parser.add_argument('-d', help='data directory',        dest='data_dir',          type=str,   default='data')
-    parser.add_argument('-t', help='test size fraction',    dest='test_size',         type=float, default=0.2)
-    parser.add_argument('-k', help='drop out probability',  dest='keep_prob',         type=float, default=0.5)
-    parser.add_argument('-n', help='number of epochs',      dest='nb_epoch',          type=int,   default=50)
-    parser.add_argument('-s', help='samples per epoch',     dest='samples_per_epoch', type=int,   default=50000)
-    parser.add_argument('-b', help='batch size',            dest='batch_size',        type=int,   default=20)
-    parser.add_argument('-o', help='save best models only', dest='save_best_only',    type=s2b,   default='false')
-    parser.add_argument('-l', help='learning rate',         dest='learning_rate',     type=float, default=1.0e-4)
-    parser.add_argument('-c', help='center only',           dest='center_only',       type=int, default=0)
+    parser.add_argument('-d', help='data directory', dest='data_dir', type=str, default='data')
+    parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.2)
+    parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
+    parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=100)
+    parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=50000)
+    parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=20)
+    parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='false')
+    parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
+    parser.add_argument('-c', help='center only', dest='center_only', type=int, default=0)
     parser.add_argument('-save_dir')
     parser.add_argument('-om', help='old model path')
     args = parser.parse_args()
@@ -124,15 +128,33 @@ def main():
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
-    if args.om is not None:
-        model = load_model(args.om)
+    augment_prob_value = np.arange(0.3, 0.9, 0.1)
+    batch_size_values = np.arange(10, 51, 5)
+    small_angle_keep_prob_values = np.arange(0.2, 0.9, 0.2)
+    translate_mult_values = np.arange(0.001, 0.004, 0.001)
+    normalize_values = [255., 127.5]
+    pooling_values = ['max', 'avg']
+    add_dense_values = [False, True]
+    activation_values_conv = ['elu', 'relu']
+    activation_values_dense = ['elu', 'tanh']
 
-    else:
-        model = build_nvidia_model(args)
     data = load_data(args)
-    train_model(model, args, *data)
+    counter = 0
+    for aug_prob, batch_size, angle_keep_prob, translate_mult, norm_value, pool_type, add_dense, act_conv, act_dense in itertools.product(augment_prob_value, batch_size_values, small_angle_keep_prob_values, translate_mult_values, normalize_values, pooling_values, add_dense_values, activation_values_conv, activation_values_dense):
+        train(normalize=norm_value,
+              pooling_type=pool_type,
+              add_dense=add_dense,
+              activation_conv=act_conv,
+              activation_dense=act_dense,
+              data=data,
+              args=args,
+              augment_prob=aug_prob,
+              batch_size=batch_size,
+              small_angle_keep_prob=angle_keep_prob,
+              translate_multiplier=translate_mult)
 
+        with open('counter.txt', 'w') as fp:
+            fp.write(str(counter))
 
-if __name__ == '__main__':
-    main()
+        counter += 1
 

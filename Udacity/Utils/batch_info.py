@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from matplotlib import pyplot as plt
 from Udacity.model import load_data
-from Udacity.utils import batch_generator
+from Udacity.utils import batch_generator, random_brightness, random_flip, random_translate
 
 
 def print_graph(args, X_train, X_valid, y_train, y_valid):
