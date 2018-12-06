@@ -50,10 +50,10 @@ def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob
     """
     Train the model
     """
-    if not path.exists('Models'):
-        os.mkdir('Models')
+    if not path.exists('D:\Eitan_Netanel\Models'):
+        os.mkdir('D:\Eitan_Netanel\Models')
 
-    full_path = path.join('Models', save_dir)
+    full_path = path.join('D:\Eitan_Netanel\Models', save_dir)
     if not path.exists(full_path):
         os.mkdir(full_path)
 
@@ -128,14 +128,14 @@ if __name__ == '__main__':
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
-    augment_prob_value = np.arange(0.3, 0.9, 0.1)
-    batch_size_values = np.arange(10, 51, 5)
-    small_angle_keep_prob_values = np.arange(0.2, 0.9, 0.2)
+    augment_prob_value = np.arange(0.3, 0.9, 0.2)
+    batch_size_values = [20, 40, 80]
+    small_angle_keep_prob_values = np.arange(0.2, 0.9, 0.3)
     translate_mult_values = np.arange(0.001, 0.004, 0.001)
-    normalize_values = [255., 127.5]
+    normalize_values = [127.5]
     pooling_values = ['max', 'avg']
-    add_dense_values = [False, True]
-    activation_values_conv = ['elu', 'relu']
+    add_dense_values = [False]
+    activation_values_conv = ['elu']
     activation_values_dense = ['elu', 'tanh']
 
     data = load_data(args)
