@@ -108,7 +108,7 @@ if __name__ == '__main__':
         help='Path to image folder. This is where the images from the run will be saved.'
     )
     args = parser.parse_args()
-
+    print(args.model)
     model = load_model(args.model)
 
     if args.image_folder != '':

@@ -8,6 +8,7 @@ import numpy as np
 from Udacity import utils
 from matplotlib import pyplot as plt
 
+
 save_path = 'feature_maps'
 img_path = r'D:\Eitan_Netanel\Records\Normal_3\IMG\center_2018_11_30_16_43_27_723.jpg'
 model_path = r'C:\Users\netanelgip\PycharmProjects\CarNet\Udacity\normal_turns_reducelr_elu_lr0.6_batch20_saveall\model-016.h5'
