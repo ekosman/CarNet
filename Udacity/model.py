@@ -71,7 +71,7 @@ def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6,
-                                  patience=5, verbose=1)
+                                  patience=10, verbose=1)
 
     if not path.exists('./logs'):
         os.mkdir('./logs')
@@ -85,7 +85,7 @@ def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob
                         epochs=args.nb_epoch,
                         validation_data=batch_generator(args.data_dir, X_valid, y_valid, batch_size, False, augment_prob, small_angle_keep_prob, translate_multiplier),
                         validation_steps=len(X_valid) // batch_size,
-                        callbacks=[checkpoint, early, reduce_lr],
+                        callbacks=[checkpoint, tensorboard, reduce_lr],
                         verbose=1)
 
 
@@ -111,11 +111,11 @@ if __name__ == '__main__':
     parser.add_argument('-d', help='data directory', dest='data_dir', type=str, default='data')
     parser.add_argument('-t', help='test size fraction', dest='test_size', type=float, default=0.2)
     parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
-    parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=100)
+    parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=40)
     parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=50000)
     parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=20)
     parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='false')
-    parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=1.0e-4)
+    parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=5.0e-4)
     parser.add_argument('-c', help='center only', dest='center_only', type=int, default=0)
     parser.add_argument('-save_dir')
     parser.add_argument('-om', help='old model path')
@@ -128,15 +128,17 @@ if __name__ == '__main__':
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
-    augment_prob_value = np.arange(0.3, 0.9, 0.2)
-    batch_size_values = [20, 40, 80]
-    small_angle_keep_prob_values = np.arange(0.2, 0.9, 0.3)
-    translate_mult_values = np.arange(0.001, 0.004, 0.001)
+    augment_prob_value = [0]
+    # augment_prob_value = np.arange(0.5, 0.6, 0.1)
+    batch_size_values = [80]
+    small_angle_keep_prob_values = [1]
+    # small_angle_keep_prob_values = np.arange(0.2, 0.3, 0.1)
+    translate_mult_values = np.arange(0.003, 0.004, 0.001)
     normalize_values = [127.5]
-    pooling_values = ['max', 'avg']
+    pooling_values = ['max']
     add_dense_values = [False]
     activation_values_conv = ['elu']
-    activation_values_dense = ['elu', 'tanh']
+    activation_values_dense = ['tanh']
 
     data = load_data(args)
     counter = 0
