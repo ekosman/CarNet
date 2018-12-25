@@ -16,8 +16,8 @@ from utils import batch_generator, translate_range_x, translate_range_y
 def draw_image_with_label(img, label, prediction=None):
     #  theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
     theta = label * 1.5  # Steering range for the car is +- 40 degrees -> 0.69 radians
-    line_length = 50
-    line_thickness = 2
+    line_length = 25
+    line_thickness = 1
     label_line_color = (255, 0, 0)
     prediction_line_color = (0, 0, 255)
     pil_image = image.array_to_img(img, K.image_data_format(), scale=True)
@@ -29,7 +29,7 @@ def draw_image_with_label(img, label, prediction=None):
         int((img.shape[1] / 2) + (line_length * math.sin(theta))), int(img.shape[0] - (line_length * math.cos(theta))))
     image_draw.line([first_point, second_point], fill=label_line_color, width=line_thickness)
 
-    if (prediction is not None):
+    if prediction is not None:
         print('Predicted Steering Angle = {0}'.format(prediction))
         print('L1 Error: {0}'.format(abs(prediction - label)))
         theta = prediction * 4

@@ -20,7 +20,7 @@ app = Flask(__name__)
 model = None
 prev_image_array = None
 
-MAX_SPEED = 25
+MAX_SPEED = 100
 MIN_SPEED = 10
 
 speed_limit = MAX_SPEED
@@ -44,9 +44,9 @@ def telemetry(sid, data):
             
         try:
             image = np.asarray(image)       # from PIL image to numpy array
+            tmp_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             image = utils.preprocess(image) # apply the preprocessing
 
-            tmp_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
             # cv2.imshow('win', tmp_image)
             # cv2.waitKey(1)
