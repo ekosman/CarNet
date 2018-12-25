@@ -35,7 +35,6 @@ for i, activation_map in enumerate(activation_maps):
         os.mkdir(layer_dir)
 
     if len(shape) == 4:
-        # activations = np.hstack(np.transpose(activation_map[0], (2, 0, 1)))
         edge_len = int(np.sqrt(shape[3]))
         activations = np.transpose(activation_map[0], (2, 0, 1))
 
@@ -47,7 +46,6 @@ for i, activation_map in enumerate(activation_maps):
             save_name = path.join(layer_dir, str(j))
             print('saving to: {}'.format(save_name))
             plt.savefig(save_name)
-            # activations = np.block(blocks)
     elif len(shape) == 2:
         # try to make it square as much as possible. we can skip some activations.
         activations = activation_map[0]

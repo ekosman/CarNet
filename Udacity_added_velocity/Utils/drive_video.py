@@ -1,27 +1,14 @@
 import argparse
-import base64
-import os
-import shutil
-from datetime import datetime
-from io import BytesIO
-from os import path
-
 import cv2
-import eventlet.wsgi
 import numpy as np
-import socketio
-from PIL import Image
-from flask import Flask
 from keras.models import load_model
-import utils
+
 from Utils.train_utils import draw_image_with_label
-from utils import IMAGE_HEIGHT, IMAGE_WIDTH, IMAGE_CHANNELS
+from utils import IMAGE_WIDTH
 
 
 def display_info(image_view, steering):
-    tmp_image = np.asarray(draw_image_with_label(image_view, steering))
-    # tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
-    return tmp_image
+    return np.asarray(draw_image_with_label(image_view, steering))
 
 
 def get_video_properties(m_vidcap):
@@ -39,7 +26,7 @@ def get_video_properties(m_vidcap):
 
 
 def prepeare_input_image(original_img):
-    original_img = original_img[:, 30:-30, :]
+    original_img = original_img[:, 30:-60, :]
     shape = original_img.shape
     ratio = IMAGE_WIDTH / shape[1]
     res = cv2.resize(original_img, None, fx=ratio, fy=ratio)
@@ -49,7 +36,6 @@ def prepeare_input_image(original_img):
     cv2.waitKey(1)
     res = cv2.cvtColor(vid_frame_pred, cv2.COLOR_RGB2BGR)
     return res
-    # predict the steering angle for the image
 
 
 if __name__ == '__main__':
@@ -73,7 +59,6 @@ if __name__ == '__main__':
 
     vidcap = cv2.VideoCapture(args.video_path)
     vid_width, vid_height, fps, length = get_video_properties(vidcap)
-    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     fourcc = cv2.VideoWriter_fourcc(*'MPEG')
     save_name = r'test_video.avi'
     video = cv2.VideoWriter(save_name, fourcc, fps, (vid_width, vid_height))

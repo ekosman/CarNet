@@ -61,17 +61,10 @@ def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob
     if not path.exists(full_path):
         os.mkdir(full_path)
 
-    if not path.exists('centered_models') and args.center_only:
-        os.mkdir('centered_models')
-
-    elif not path.exists('augment_models') and not args.center_only:
-        os.mkdir('augment_models')
-
     save_dir = full_path
     checkpoint = ModelCheckpoint(path.join(save_dir, 'model-{epoch:03d}.h5'),
                                  monitor='val_loss',
                                  verbose=0,
-                                 save_best_only=args.save_best_only,
                                  mode='auto')
     early = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.6,
@@ -92,7 +85,7 @@ def train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob
         validation_data=batch_generator(args.data_dir, X_valid, y_valid, batch_size, False, augment_prob,
                                         small_angle_keep_prob, translate_multiplier),
         validation_steps=len(X_valid) // batch_size,
-        callbacks=[checkpoint, tensorboard, reduce_lr],
+        callbacks=[checkpoint, tensorboard, reduce_lr, early],
         verbose=1)
 
 
@@ -134,32 +127,18 @@ if __name__ == '__main__':
     parser.add_argument('-k', help='drop out probability', dest='keep_prob', type=float, default=0.5)
     parser.add_argument('-n', help='number of epochs', dest='nb_epoch', type=int, default=50)
     parser.add_argument('-s', help='samples per epoch', dest='samples_per_epoch', type=int, default=50000)
-    parser.add_argument('-b', help='batch size', dest='batch_size', type=int, default=20)
-    parser.add_argument('-o', help='save best models only', dest='save_best_only', type=s2b, default='false')
     parser.add_argument('-l', help='learning rate', dest='learning_rate', type=float, default=5.0e-4)
-    parser.add_argument('-c', help='center only', dest='center_only', type=int, default=0)
-    parser.add_argument('-save_dir')
-    parser.add_argument('-om', help='old model path')
     args = parser.parse_args()
 
-    print('-' * 30)
-    print('Parameters')
-    print('-' * 30)
-    for key, value in vars(args).items():
-        print('{:<20} := {}'.format(key, value))
-    print('-' * 30)
-
-    augment_prob_value = [0]
-    # augment_prob_value = np.arange(0.5, 0.6, 0.1)
+    augment_prob_value = np.arange(0.5, 0.6, 0.1)
     batch_size_values = [80]
-    small_angle_keep_prob_values = [1]
-    # small_angle_keep_prob_values = np.arange(0.2, 0.3, 0.1)
+    small_angle_keep_prob_values = np.arange(0.2, 0.3, 0.1)
     translate_mult_values = np.arange(0.003, 0.004, 0.001)
     normalize_values = [127.5]
-    pooling_values = ['max']
+    pooling_values = ['max', 'avg']
     add_dense_values = [False]
-    activation_values_conv = ['elu']
-    activation_values_dense = ['tanh']
+    activation_values_conv = ['elu', 'relu']
+    activation_values_dense = ['tanh', 'elu']
 
     data = load_data(args)
     counter = 0

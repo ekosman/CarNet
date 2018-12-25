@@ -4,6 +4,7 @@ import os
 import shutil
 from datetime import datetime
 from io import BytesIO
+
 import cv2
 import eventlet.wsgi
 import numpy as np
@@ -11,15 +12,9 @@ import socketio
 from PIL import Image
 from flask import Flask
 from keras.models import load_model
+
 import utils
 from Utils.train_utils import draw_image_with_label
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-
-# plt.ion()
-# fig = plt.figure()
-# ax = fig.add_subplot(1, 1, 1)
-speeds, predicted_speeds = [], []
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -42,7 +37,6 @@ def telemetry(sid, data):
     if data:
         # The current speed of the car
         speed = float(data["speed"])
-        speeds.append(speed)
         # The current image from the center camera of the car
         image = Image.open(BytesIO(base64.b64decode(data["image"])))
         # save frame
@@ -59,7 +53,6 @@ def telemetry(sid, data):
             prediction = model.predict(np.array([image]), batch_size=1)[0]
             steering_angle = float(prediction[0])
             predicted_velocity = float(prediction[1])
-            predicted_speeds.append(predicted_velocity)
             throttle = K * (predicted_velocity - speed) + B
 
             display_info(image, steering_angle)
@@ -88,24 +81,6 @@ def send_control(steering_angle, throttle):
             'throttle': throttle.__str__()
         },
         skip_sid=True)
-
-'''
-def animate(i, xs, ys):
-
-    # Read temperature (Celsius) from TMP102
-    # Limit x and y lists to 20 items
-    xs = xs[-200:]
-    ys = ys[-200:]
-
-    # Draw x and y lists
-    ax.clear()
-    ax.plot(xs, color='r', label='Current speed')
-    ax.plot(ys, color='g', label='Predicted speed')
-    ax.legend()
-
-    # Format plot
-    plt.subplots_adjust(bottom=0.30)
-'''
 
 
 if __name__ == '__main__':
@@ -139,10 +114,6 @@ if __name__ == '__main__':
 
     # wrap Flask application with engineio's middleware
     app = socketio.Middleware(sio, app)
-
-    # prepare animated graphs
-    # ani = animation.FuncAnimation(fig, animate, fargs=(speeds, predicted_speeds), interval=100)
-    # plt.show()
 
     # deploy as an eventlet WSGI server
     eventlet.wsgi.server(eventlet.listen(('', 4567)), app)

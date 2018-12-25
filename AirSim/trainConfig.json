@@ -1,6 +1,0 @@
-{
-  "batchSize": "128",
-  "rawDataDir": "C:/Users/netanelgip/Documents/Carnet/Project/EndToEndLearningRawData/data_raw/",
-  "cookedDataDir": "C:/Users/netanelgip/Documents/Carnet/Project/EndToEndLearningRawData/data_cooked",
-  "modelSaveDir": "C:/Users/netanelgip/Documents/Carnet/Project/EndToEndLearningRawData/model"
-}

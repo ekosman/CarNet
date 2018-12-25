@@ -10,7 +10,7 @@ augment_prob = 0.7
 brightness_low = 0.8
 brightness_high = 1.2
 
-translate_multiplier = 0.002  # 0.002 in original
+translate_multiplier = 0.002
 translate_range_x = 100
 translate_range_y = 10
 
@@ -27,9 +27,8 @@ def load_image(data_dir, image_file):
 
 
 def preprocess(image):
-    image = image[60:-25, :, :]  # crop
+    image = image[60:-25, :, :]
     image = cv2.resize(image, (IMAGE_WIDTH, IMAGE_HEIGHT), cv2.INTER_AREA)
-    # image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
     return image
 
 
@@ -65,31 +64,6 @@ def random_translate(image, steering_angle, translate_multiplier):
     return translate(image, steering_angle, trans_x, trans_y, translate_multiplier)
 
 
-def random_shadow(image):
-    # (x1, y1) and (x2, y2) forms a line
-    # xm, ym gives all the locations of the image
-    x1, y1 = IMAGE_WIDTH * np.random.rand(), 0
-    x2, y2 = IMAGE_WIDTH * np.random.rand(), IMAGE_HEIGHT
-    xm, ym = np.mgrid[0:IMAGE_HEIGHT, 0:IMAGE_WIDTH]
-
-    # mathematically speaking, we want to set 1 below the line and zero otherwise
-    # Our coordinate is up side down.  So, the above the line: 
-    # (ym-y1)/(xm-x1) > (y2-y1)/(x2-x1)
-    # as x2 == x1 causes zero-division problem, we'll write it in the below form:
-    # (ym-y1)*(x2-x1) - (y2-y1)*(xm-x1) > 0
-    mask = np.zeros_like(image[:, :, 1])
-    mask[np.where((ym - y1) * (x2 - x1) - (y2 - y1) * (xm - x1) > 0)] = 1
-
-    # choose which side should have shadow and adjust saturation
-    cond = mask == np.random.randint(2)
-    s_ratio = np.random.uniform(low=0.2, high=0.5)
-
-    # adjust Saturation in HLS(Hue, Light, Saturation)
-    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
-    hls[:, :, 1][cond] = hls[:, :, 1][cond] * s_ratio
-    return cv2.cvtColor(hls, cv2.COLOR_HLS2RGB)
-
-
 def random_brightness(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
     ratio = np.random.uniform(brightness_low, brightness_high)
@@ -101,25 +75,23 @@ def generate_shadow_coordinates(imshape, no_of_shadows=1):
     vertices_list = []
     for index in range(no_of_shadows):
         vertex = []
-        for dimensions in range(np.random.randint(3, 15)):  ## Dimensionality of the shadow polygon
+        for dimensions in range(np.random.randint(3, 15)):
             vertex.append((imshape[1] * np.random.uniform(), imshape[0] // 3 + imshape[0] * np.random.uniform()))
-        vertices = np.array([vertex], dtype=np.int32)  ## single shadow vertices
+        vertices = np.array([vertex], dtype=np.int32)
         vertices_list.append(vertices)
-    return vertices_list  ## List of shadow vertices
+    return vertices_list
 
 
 def add_shadow(image, no_of_shadows=1):
-    image_HLS = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)  ## Conversion to HLS
+    image_HLS = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
     mask = np.zeros_like(image)
     imshape = image.shape
-    vertices_list = generate_shadow_coordinates(imshape, no_of_shadows)  # 3 getting list of shadow vertices
+    vertices_list = generate_shadow_coordinates(imshape, no_of_shadows)
     for vertices in vertices_list:
-        cv2.fillPoly(mask, vertices,
-                     255)  ## adding all shadow polygons on empty mask, single 255 denotes only red channel
+        cv2.fillPoly(mask, vertices, 255)
 
-    image_HLS[:, :, 1][mask[:, :, 0] == 255] = image_HLS[:, :, 1][mask[:, :,
-                                                                  0] == 255] * 0.5  ## if red channel is hot, image's "Lightness" channel's brightness is lowered
-    image_RGB = cv2.cvtColor(image_HLS, cv2.COLOR_HLS2RGB)  ## Conversion to RGB
+    image_HLS[:, :, 1][mask[:, :, 0] == 255] = image_HLS[:, :, 1][mask[:, :, 0] == 255] * 0.5
+    image_RGB = cv2.cvtColor(image_HLS, cv2.COLOR_HLS2RGB)
     return image_RGB
 
 
@@ -131,7 +103,7 @@ def augment(data_dir, center, left, right, steering_angle, augment_prob, transla
         image, steering_angle = random_translate(image, steering_angle, translate_multiplier)
     if np.random.rand() < augment_prob:
         image = add_shadow(image, np.random.choice(3) + 1)
-        # image = random_shadow(image)
+
     if np.random.rand() < augment_prob:
         image = random_brightness(image)
     return image, steering_angle
@@ -148,7 +120,7 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             center, left, right = image_paths[perm_i]
             steering_angle = steering_angles[perm_i]
 
-            # augmentation
+
             if is_training:
                 image, steering_angle = augment(data_dir, center, left, right, steering_angle, augment_prob, translate_multiplier)
             else:
@@ -157,7 +129,7 @@ def batch_generator(data_dir, image_paths, steering_angles, batch_size, is_train
             if np.abs(steering_angle) < steering_threshold and np.random.rand() > small_angle_keep_prob:
                 continue
 
-            # add the image and steering angle to the batch
+
             images[i] = preprocess(image)
             steers[i] = steering_angle
             i += 1
