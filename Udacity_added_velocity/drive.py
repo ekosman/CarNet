@@ -11,32 +11,38 @@ import socketio
 from PIL import Image
 from flask import Flask
 from keras.models import load_model
-
 import utils
 from Utils.train_utils import draw_image_with_label
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# plt.ion()
+# fig = plt.figure()
+# ax = fig.add_subplot(1, 1, 1)
+speeds, predicted_speeds = [], []
 
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
-prev_image_array = None
 
-MAX_SPEED = 25
-MIN_SPEED = 10
+K = 1  # throttle multiplier
+B = 5  # throttle bias
 
-K = 1
-B = 0
 
-speed_limit = MAX_SPEED
+def display_info(image_view, steering):
+    image = cv2.cvtColor(image_view, cv2.COLOR_RGB2BGR)
+    tmp_image = np.asarray(draw_image_with_label(image, steering))
+    tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
+    cv2.imshow('win', tmp_image)
+    cv2.waitKey(1)
+
 
 @sio.on('telemetry')
 def telemetry(sid, data):
     if data:
-        # The current steering angle of the car
-        steering_angle = float(data["steering_angle"])
-        # The current throttle of the car
-        throttle = float(data["throttle"])
         # The current speed of the car
         speed = float(data["speed"])
+        speeds.append(speed)
         # The current image from the center camera of the car
         image = Image.open(BytesIO(base64.b64decode(data["image"])))
         # save frame
@@ -46,22 +52,17 @@ def telemetry(sid, data):
             image.save('{}.jpg'.format(image_filename))
             
         try:
-            image = np.asarray(image)       # from PIL image to numpy array
-            image = utils.preprocess(image) # apply the preprocessing
+            image = np.asarray(image)        # from PIL image to numpy array
+            image = utils.preprocess(image)  # apply the preprocessing
 
-            tmp_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-            image = np.array([image])       # the model expects 4D array
             # predict the steering angle for the image
-            prediction = model.predict(image, batch_size=1)[0]
+            prediction = model.predict(np.array([image]), batch_size=1)[0]
             steering_angle = float(prediction[0])
             predicted_velocity = float(prediction[1])
-            tmp_image = np.asarray(draw_image_with_label(tmp_image, steering_angle))
-            tmp_image = cv2.resize(tmp_image, None, fx=3, fy=3)
-            cv2.imshow('win', tmp_image)
-            cv2.waitKey(1)
-
+            predicted_speeds.append(predicted_velocity)
             throttle = K * (predicted_velocity - speed) + B
+
+            display_info(image, steering_angle)
 
             print('Steering = {}, Throttle = {}, Speed = {}'.format(steering_angle, throttle, speed))
             send_control(steering_angle, throttle)
@@ -87,6 +88,24 @@ def send_control(steering_angle, throttle):
             'throttle': throttle.__str__()
         },
         skip_sid=True)
+
+'''
+def animate(i, xs, ys):
+
+    # Read temperature (Celsius) from TMP102
+    # Limit x and y lists to 20 items
+    xs = xs[-200:]
+    ys = ys[-200:]
+
+    # Draw x and y lists
+    ax.clear()
+    ax.plot(xs, color='r', label='Current speed')
+    ax.plot(ys, color='g', label='Predicted speed')
+    ax.legend()
+
+    # Format plot
+    plt.subplots_adjust(bottom=0.30)
+'''
 
 
 if __name__ == '__main__':
@@ -121,5 +140,10 @@ if __name__ == '__main__':
     # wrap Flask application with engineio's middleware
     app = socketio.Middleware(sio, app)
 
+    # prepare animated graphs
+    # ani = animation.FuncAnimation(fig, animate, fargs=(speeds, predicted_speeds), interval=100)
+    # plt.show()
+
     # deploy as an eventlet WSGI server
     eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
+

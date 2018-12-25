@@ -128,11 +128,11 @@ if __name__ == '__main__':
         print('{:<20} := {}'.format(key, value))
     print('-' * 30)
 
-    augment_prob_value = [0]
-    # augment_prob_value = np.arange(0.5, 0.6, 0.1)
+    # augment_prob_value = [0]
+    augment_prob_value = np.arange(0.5, 0.6, 0.1)
     batch_size_values = [80]
-    small_angle_keep_prob_values = [1]
-    # small_angle_keep_prob_values = np.arange(0.2, 0.3, 0.1)
+    # small_angle_keep_prob_values = [1]
+    small_angle_keep_prob_values = np.arange(0.2, 0.3, 0.1)
     translate_mult_values = np.arange(0.003, 0.004, 0.001)
     normalize_values = [127.5]
     pooling_values = ['max']

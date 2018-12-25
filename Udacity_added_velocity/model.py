@@ -119,7 +119,7 @@ def train_built_model(normalize, pooling_type, add_dense, activation_conv, activ
     save_dir = 'with_speed_normalize={}_pooling={}_addDence={}_activationConv={}_activationDence={}_augmentProb={}_batchSize={}_smallAngleKeepProb={}_translateMult={}'.format(
         normalize, pooling_type, add_dense, activation_conv, activation_dense, augment_prob, batch_size,
         small_angle_keep_prob, translate_multiplier)
-    model = load_model(r'D:\Eitan_Netanel\Models\normalize=127.5_pooling=max_addDence=False_activationConv=elu_activationDence=tanh_augmentProb=0.5_batchSize=80_smallAngleKeepProb=0.2_translateMult=0.003 good\model-020_best.h5')
+    model = load_model(r'S:\Netanel_Dolev\New folder\model-020_best.h5')
     model = get_velocity_branched_model(model)
     train_model(save_dir, model, augment_prob, batch_size, small_angle_keep_prob, translate_multiplier, args, *data)
 

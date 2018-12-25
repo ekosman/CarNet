@@ -1,4 +1,6 @@
+import numpy as np
 import argparse
+from os import path
 from keras.preprocessing import image
 from PIL import ImageDraw, Image
 import matplotlib.pyplot as plt
@@ -8,12 +10,13 @@ import cv2
 import numpy as np
 
 from model import load_data, s2b
-from utils import batch_generator
+from utils import batch_generator, translate_range_x, translate_range_y
 
 
 def draw_image_with_label(img, label, prediction=None):
-    theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
-    line_length = 25
+    #  theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
+    theta = label * 1.5  # Steering range for the car is +- 40 degrees -> 0.69 radians
+    line_length = 50
     line_thickness = 2
     label_line_color = (255, 0, 0)
     prediction_line_color = (0, 0, 255)
@@ -23,7 +26,7 @@ def draw_image_with_label(img, label, prediction=None):
     image_draw = ImageDraw.Draw(draw_image)
     first_point = (int(img.shape[1] / 2), img.shape[0])
     second_point = (
-    int((img.shape[1] / 2) + (line_length * math.sin(theta))), int(img.shape[0] - (line_length * math.cos(theta))))
+        int((img.shape[1] / 2) + (line_length * math.sin(theta))), int(img.shape[0] - (line_length * math.cos(theta))))
     image_draw.line([first_point, second_point], fill=label_line_color, width=line_thickness)
 
     if (prediction is not None):
@@ -31,13 +34,13 @@ def draw_image_with_label(img, label, prediction=None):
         print('L1 Error: {0}'.format(abs(prediction - label)))
         theta = prediction * 4
         second_point = (
-        int((img.shape[1] / 2) + (line_length * math.sin(theta))), int(img.shape[0] - (line_length * math.cos(theta))))
+            int((img.shape[1] / 2) + (line_length * math.sin(theta))),
+            int(img.shape[0] - (line_length * math.cos(theta))))
         image_draw.line([first_point, second_point], fill=prediction_line_color, width=line_thickness)
 
     del image_draw
-    #plt.imshow(draw_image)
-    #plt.show()
     return draw_image
+
 
 def random_flip(image, steering_angle):
     """
@@ -49,18 +52,18 @@ def random_flip(image, steering_angle):
     return image, steering_angle
 
 
-def random_translate(image, range_x, range_y, p_x, p_y):
-    """
-    Randomly shift the image virtially and horizontally (translation).
-    """
-    # trans_x = range_x * (np.random.rand() - 0.5)
-    # trans_y = range_y * (np.random.rand() - 0.5)
-    trans_x = range_x * p_x
-    trans_y = range_y * p_y
+def translate(image, steering_angle, trans_x, trans_y, translate_multiplier=0.002):
+    steering_angle += trans_x * translate_multiplier
     trans_m = np.float32([[1, 0, trans_x], [0, 1, trans_y]])
     height, width = image.shape[:2]
     image = cv2.warpAffine(image, trans_m, (width, height))
-    return image
+    return image, steering_angle
+
+
+def random_translate(image, steering_angle, translate_multiplier):
+    trans_x = translate_range_x * np.random.uniform(-0.5, 0.5)
+    trans_y = translate_range_y * np.random.uniform(-0.5, 0.5)
+    return translate(image, steering_angle, trans_x, trans_y, translate_multiplier)
 
 
 def random_shadow(image):
@@ -100,7 +103,7 @@ def random_brightness(image):
     # HSV (Hue, Saturation, Value) is also called HSB ('B' for Brightness).
     hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
     ratio = 1.0 + 0.4 * (np.random.rand() - 0.5)
-    hsv[:,:,2] =  hsv[:,:,2] * ratio
+    hsv[:, :, 2] = hsv[:, :, 2] * ratio
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 
@@ -150,35 +153,23 @@ if __name__ == '__main__':
     parser.add_argument('-c', help='center only', dest='center_only', type=int, default=0)
     args = parser.parse_args()
 
-    pc = r"S:\Netanel\Carnet\Record\IMG\center_2018_11_09_15_06_51_950.JPG"
-    pl = r"S:\Netanel\Carnet\Record\IMG\left_2018_11_09_15_06_51_950.JPG"
-    pr = r"S:\Netanel\Carnet\Record\IMG\right_2018_11_09_15_06_51_950.JPG"
-    '''
-    save_dir = r'D:\pres_imgs'
-    im = cv2.imread(pc, current1)
-    iml = cv2.imread(pl, current1)
-    imr = cv2.imread(pr, current1)
-    # im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    base_path = r"D:\Eitan_Netanel\Records\normal\IMG\{}_2018_11_16_12_35_29_438.jpg"
+    pc = base_path.format("center")
+    pl = base_path.format("left")
+    pr = base_path.format("right")
+    save_dir = r'D:\Eitan_Netanel\translation_pics'
+    im = cv2.imread(pc, 1)
+    iml = cv2.imread(pl, 1)
+    imr = cv2.imread(pr, 1)
 
-    height, width = im.shape[:2]
+    image_ag_1, st1 = random_translate(iml, -0.070443, 0.002)
+    image_ag_2, st2 = random_translate(iml, -0.070443, 0.003)
+    image_ag_3, st3 = random_translate(iml, -0.070443, 0.004)
+    im1 = np.asarray(draw_image_with_label(image_ag_1, -0.070443, st1))
+    im2 = np.asarray(draw_image_with_label(image_ag_2, -0.070443, st2))
+    im3 = np.asarray(draw_image_with_label(image_ag_3, -0.070443, st3))
 
-    param = 30
-    pts1 = np.float32([[param, param], [height-param, param], [0, width], [height, width]])
-    pts2 = np.float32([[0, 0], [height, 0], [0, width], [height, width]])
-    M = cv2.getPerspectiveTransform(pts1, pts2)
-    dst_right = cv2.warpPerspective(imr, M, (width, height))
-
-    image_ag_1 = random_translate(iml, 100, 10, -0.5, 0)
-    image_ag_2 = random_translate(imr, 100, 10, 0.5, 0)
-    cv2.imwrite(path.join(save_dir, 'left.JPG'), image_ag_1)
-    cv2.imwrite(path.join(save_dir, 'right.JPG'), image_ag_2)
-    cv2.imwrite(path.join(save_dir, 'right_eitan.JPG'), dst_right)
-    # cv2.imshow("orig", im)
-    # cv2.imshow("dsad", dst)
-    # cv2.imshow("aug_1", image_ag_1)
-    # cv2.imshow("aug_2", image_ag_2)
-    # cv2.waitKey(0)
-    # draw_image_with_label(im,0.5,-0.5)
-    '''
-    data = load_data(args)
-    print_graph(args, *data)
+    cv2.imshow("1", im1)
+    cv2.imshow("2", im2)
+    cv2.imshow("3", im3)
+    cv2.waitKey(0)

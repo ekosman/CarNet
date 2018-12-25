@@ -12,9 +12,9 @@ from utils import batch_generator
 
 
 def draw_image_with_label(img, label, prediction=None):
-    theta = label * 0.69  # Steering range for the car is +- 40 degrees -> 0.69 radians
-    line_length = 25
-    line_thickness = 2
+    theta = label * 2  # Steering range for the car is +- 40 degrees -> 0.69 radians
+    line_length = 125
+    line_thickness = 5
     label_line_color = (255, 0, 0)
     prediction_line_color = (0, 0, 255)
     pil_image = image.array_to_img(img, K.image_data_format(), scale=True)
